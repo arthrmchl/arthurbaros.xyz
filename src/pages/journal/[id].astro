@@ -18,6 +18,7 @@ const w = work.data;
       {verb[w.type]} le {fmtDate(log.data.date)}{log.data.repeat && ' (deuxième passage ou plus)'}.
       Note : <span class="rating">{fmtRating(log.data.rating)}</span>
     </p>
+    {w.poster && <img class="cover" src={w.poster} alt={`Affiche : ${w.title}`} />}
     {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
     {log.data.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
     <div class="prose"><Content /></div>

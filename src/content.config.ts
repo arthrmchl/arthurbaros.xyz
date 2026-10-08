@@ -8,14 +8,29 @@ const generateId = ({ entry }: { entry: string }) => basename(entry).replace(/\.
 // Fiche d'œuvre : stable, une seule par film ou livre.
 const works = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/works', generateId }),
-  schema: z.object({
-    title: z.string(),
-    type: z.enum(['film', 'livre']),
-    creator: z.string(),            // réalisateur ou auteur
-    year: z.number().int(),         // année de sortie / de publication
-    cover: z.string().optional(),   // URL ou chemin dans /public
-    tags: z.array(z.string()).default([]),
-  }),
+  schema: z
+    .object({
+      title: z.string(),
+      type: z.enum(['film', 'livre']),
+      creator: z.string().optional(),   // auteur (livres)
+      director: z.string().optional(),  // réalisateur (films)
+      year: z.number().int(),           // année de sortie / de publication
+      runtime: z.number().int().positive().optional(), // durée en minutes (films)
+      poster: z.string().optional(),    // affiche (films) : URL ou chemin dans /public
+      backdrop: z.string().optional(),  // image de fond (films) : URL ou chemin dans /public
+      cover: z.string().optional(),     // couverture (livres) : URL ou chemin dans /public
+      tags: z.array(z.string()).default([]),
+    })
+    .superRefine((w, ctx) => {
+      if (w.type === 'film' && !w.director && !w.creator) {
+        ctx.addIssue({ code: 'custom', path: ['director'], message: 'Un film doit avoir un `director`.' });
+      }
+      if (w.type === 'livre' && !w.creator) {
+        ctx.addIssue({ code: 'custom', path: ['creator'], message: 'Un livre doit avoir un `creator`.' });
+      }
+    })
+    // `creator` reste le champ commun lu par les pages : réalisateur pour un film, auteur pour un livre.
+    .transform((w) => ({ ...w, creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)! })),
 });
 
 // Entrée de journal : un visionnage ou une lecture, avec ton avis.

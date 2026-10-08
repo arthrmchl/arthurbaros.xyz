@@ -1,0 +1,153 @@
+diff --git a/README.md b/README.md
+index 9db9c84..a3b892a 100644
+--- a/README.md
++++ b/README.md
+@@ -17,7 +17,11 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
+ 
+ ## Ajouter une review
+ 
+-1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (titre, `type`, `creator`, `year`).
++1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (voir ci-dessous).
++
++   - **Film** : `title`, `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
++   - **Livre** : `title`, `type: livre`, `creator`, `year`, puis en option `cover`, `tags`.
++   - `poster`, `backdrop` et `cover` acceptent une URL ou un chemin vers un fichier de `public/`.
+ 2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md`, avec `work`, `date`, `rating` (0 à 5, par pas de 0,5), puis ton texte.
+ 3. `git add . && git commit -m "Review : ..." && git push`
+ 
+diff --git a/src/content.config.ts b/src/content.config.ts
+index 4a1f6a6..16cca55 100644
+--- a/src/content.config.ts
++++ b/src/content.config.ts
+@@ -8,14 +8,29 @@ const generateId = ({ entry }: { entry: string }) => basename(entry).replace(/\.
+ // Fiche d'œuvre : stable, une seule par film ou livre.
+ const works = defineCollection({
+   loader: glob({ pattern: '**/*.md', base: './src/content/works', generateId }),
+-  schema: z.object({
+-    title: z.string(),
+-    type: z.enum(['film', 'livre']),
+-    creator: z.string(),            // réalisateur ou auteur
+-    year: z.number().int(),         // année de sortie / de publication
+-    cover: z.string().optional(),   // URL ou chemin dans /public
+-    tags: z.array(z.string()).default([]),
+-  }),
++  schema: z
++    .object({
++      title: z.string(),
++      type: z.enum(['film', 'livre']),
++      creator: z.string().optional(),   // auteur (livres)
++      director: z.string().optional(),  // réalisateur (films)
++      year: z.number().int(),           // année de sortie / de publication
++      runtime: z.number().int().positive().optional(), // durée en minutes (films)
++      poster: z.string().optional(),    // affiche (films) : URL ou chemin dans /public
++      backdrop: z.string().optional(),  // image de fond (films) : URL ou chemin dans /public
++      cover: z.string().optional(),     // couverture (livres) : URL ou chemin dans /public
++      tags: z.array(z.string()).default([]),
++    })
++    .superRefine((w, ctx) => {
++      if (w.type === 'film' && !w.director && !w.creator) {
++        ctx.addIssue({ code: 'custom', path: ['director'], message: 'Un film doit avoir un `director`.' });
++      }
++      if (w.type === 'livre' && !w.creator) {
++        ctx.addIssue({ code: 'custom', path: ['creator'], message: 'Un livre doit avoir un `creator`.' });
++      }
++    })
++    // `creator` reste le champ commun lu par les pages : réalisateur pour un film, auteur pour un livre.
++    .transform((w) => ({ ...w, creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)! })),
+ });
+ 
+ // Entrée de journal : un visionnage ou une lecture, avec ton avis.
+diff --git a/src/content/works/films/dune-deuxieme-partie.md b/src/content/works/films/dune-deuxieme-partie.md
+index 384107c..c20550e 100644
+--- a/src/content/works/films/dune-deuxieme-partie.md
++++ b/src/content/works/films/dune-deuxieme-partie.md
+@@ -1,7 +1,8 @@
+ ---
+ title: "Dune : Deuxième partie"
+ type: film
+-creator: "Denis Villeneuve"
++director: "Denis Villeneuve"
+ year: 2024
++runtime: 166
+ tags: [science-fiction, adaptation]
+ ---
+diff --git a/src/content/works/films/parasite.md b/src/content/works/films/parasite.md
+index 6233718..393eb7e 100644
+--- a/src/content/works/films/parasite.md
++++ b/src/content/works/films/parasite.md
+@@ -1,8 +1,9 @@
+ ---
+ title: "Parasite"
+ type: film
+-creator: "Bong Joon-ho"
++director: "Bong Joon-ho"
+ year: 2019
++runtime: 132
+ tags: [thriller, satire-sociale, corée]
+ ---
+ Palme d'or 2019. Notes libres sur l'œuvre elle-même (contexte, casting, anecdotes) : ce texte s'affiche sur la page de la fiche.
+diff --git a/src/layouts/Base.astro b/src/layouts/Base.astro
+index d020fb5..9f264a0 100644
+--- a/src/layouts/Base.astro
++++ b/src/layouts/Base.astro
+@@ -68,6 +68,7 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
+   .prose img { max-width: 100%; height: auto; }
+   .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
+   .cover { float: right; width: 8rem; margin: 0 0 1rem 1.5rem; }
++  .backdrop { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; margin: 0 0 1.5rem; }
+   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
+   @media (max-width: 34rem) {
+     .entries li { grid-template-columns: 1fr auto; }
+diff --git a/src/lib/content.ts b/src/lib/content.ts
+index 55a03f9..b20cc41 100644
+--- a/src/lib/content.ts
++++ b/src/lib/content.ts
+@@ -9,6 +9,11 @@ export const verb = { film: 'Vu', livre: 'Lu' } as const;
+ 
+ export const fmtDate = (d: Date) =>
+   d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
++/** 132 -> « 2 h 12 » */
++export const fmtRuntime = (min: number) => {
++  const h = Math.floor(min / 60), m = min % 60;
++  return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
++};
+ export const fmtRating = (n: number) => `${String(n).replace('.', ',')}/5`;
+ 
+ /** Toutes les entrées de journal, reliées à leur fiche d'œuvre, de la plus récente à la plus ancienne. */
+diff --git a/src/pages/journal/[id].astro b/src/pages/journal/[id].astro
+index 6e1a0b8..3794a69 100644
+--- a/src/pages/journal/[id].astro
++++ b/src/pages/journal/[id].astro
+@@ -18,6 +18,7 @@ const w = work.data;
+       {verb[w.type]} le {fmtDate(log.data.date)}{log.data.repeat && ' (deuxième passage ou plus)'}.
+       Note : <span class="rating">{fmtRating(log.data.rating)}</span>
+     </p>
++    {w.poster && <img class="cover" src={w.poster} alt={`Affiche : ${w.title}`} />}
+     {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
+     {log.data.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
+     <div class="prose"><Content /></div>
+diff --git a/src/pages/oeuvres/[id].astro b/src/pages/oeuvres/[id].astro
+index c8d980b..991251a 100644
+--- a/src/pages/oeuvres/[id].astro
++++ b/src/pages/oeuvres/[id].astro
+@@ -2,7 +2,7 @@
+ import { getCollection, render } from 'astro:content';
+ import Base from '../../layouts/Base.astro';
+ import EntryList from '../../components/EntryList.astro';
+-import { getJournal, typeLabel } from '../../lib/content';
++import { getJournal, typeLabel, fmtRuntime } from '../../lib/content';
+ 
+ export async function getStaticPaths() {
+   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
+@@ -16,8 +16,10 @@ const { Content } = await render(work);
+ const w = work.data;
+ ---
+ <Base title={w.title}>
++  {w.backdrop && <img class="backdrop" src={w.backdrop} alt="" />}
+   <h1>{w.title}</h1>
+-  <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}</p>
++  <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}{w.runtime && `, ${fmtRuntime(w.runtime)}`}</p>
++  {w.poster && <img class="cover" src={w.poster} alt={`Affiche : ${w.title}`} />}
+   {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
+   {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li>#{t}</li>)}</ul>}
+   <div class="prose"><Content /></div>

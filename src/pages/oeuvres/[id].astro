@@ -2,7 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
-import { getJournal, typeLabel } from '../../lib/content';
+import { getJournal, typeLabel, fmtRuntime } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -16,8 +16,10 @@ const { Content } = await render(work);
 const w = work.data;
 ---
 <Base title={w.title}>
+  {w.backdrop && <img class="backdrop" src={w.backdrop} alt="" />}
   <h1>{w.title}</h1>
-  <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}</p>
+  <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}{w.runtime && `, ${fmtRuntime(w.runtime)}`}</p>
+  {w.poster && <img class="cover" src={w.poster} alt={`Affiche : ${w.title}`} />}
   {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
   {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li>#{t}</li>)}</ul>}
   <div class="prose"><Content /></div>

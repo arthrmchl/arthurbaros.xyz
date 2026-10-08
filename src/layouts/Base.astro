@@ -68,6 +68,7 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
   .prose img { max-width: 100%; height: auto; }
   .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
   .cover { float: right; width: 8rem; margin: 0 0 1rem 1.5rem; }
+  .backdrop { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; margin: 0 0 1.5rem; }
   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
   @media (max-width: 34rem) {
     .entries li { grid-template-columns: 1fr auto; }

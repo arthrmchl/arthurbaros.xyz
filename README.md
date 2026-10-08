@@ -17,7 +17,11 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
 
 ## Ajouter une review
 
-1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (titre, `type`, `creator`, `year`).
+1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (voir ci-dessous).
+
+   - **Film** : `title`, `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
+   - **Livre** : `title`, `type: livre`, `creator`, `year`, puis en option `cover`, `tags`.
+   - `poster`, `backdrop` et `cover` acceptent une URL ou un chemin vers un fichier de `public/`.
 2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md`, avec `work`, `date`, `rating` (0 à 5, par pas de 0,5), puis ton texte.
 3. `git add . && git commit -m "Review : ..." && git push`
 

@@ -9,6 +9,11 @@ export const verb = { film: 'Vu', livre: 'Lu' } as const;
 
 export const fmtDate = (d: Date) =>
   d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+/** 132 -> « 2 h 12 » */
+export const fmtRuntime = (min: number) => {
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
+};
 export const fmtRating = (n: number) => `${String(n).replace('.', ',')}/5`;
 
 /** Toutes les entrées de journal, reliées à leur fiche d'œuvre, de la plus récente à la plus ancienne. */
