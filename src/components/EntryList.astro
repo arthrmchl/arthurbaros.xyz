@@ -1,0 +1,21 @@
+---
+import { href, fmtDate, fmtRating, typeLabel } from '../lib/content';
+const { entries, showType = true } = Astro.props;
+---
+<ul class="entries">
+  {entries.map(({ log, work }) => (
+    <li>
+      <time class="date" datetime={log.data.date.toISOString().slice(0, 10)}>{fmtDate(log.data.date)}</time>
+      <div>
+        <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
+        <span class="meta">
+          {work.data.creator}, {work.data.year}
+          {showType && <> — <span class={`kind-${work.data.type}`}>{typeLabel[work.data.type]}</span></>}
+          {log.data.repeat && ' — revu'}
+        </span>
+      </div>
+      <span class="rating">{fmtRating(log.data.rating)}</span>
+      {log.data.summary && <p class="summary">{log.data.summary}</p>}
+    </li>
+  ))}
+</ul>

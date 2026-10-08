@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import EntryList from '../components/EntryList.astro';
+import { getJournal, href } from '../lib/content';
+
+const journal = await getJournal();
+const years = [...new Set(journal.map(({ log }) => log.data.date.getUTCFullYear()))].sort((a, b) => b - a);
+---
+<Base>
+  <h1>Films vus, livres lus</h1>
+  <p class="meta">Mes avis, dans l'ordre où je les écris.</p>
+  <EntryList entries={journal.slice(0, 20)} />
+  <p class="meta">
+    Bilans par année :
+    {years.map((y, i) => <>{i > 0 && ', '}<a href={href(`/annees/${y}/`)}>{y}</a></>)}
+  </p>
+</Base>

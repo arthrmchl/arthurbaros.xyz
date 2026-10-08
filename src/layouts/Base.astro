@@ -1,0 +1,76 @@
+---
+import { href } from '../lib/content';
+interface Props { title?: string; description?: string }
+const { title, description = 'Mes avis sur les films que je vois et les livres que je lis.' } = Astro.props;
+const siteName = 'Journal de bord';
+const fullTitle = title ? `${title} · ${siteName}` : siteName;
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="alternate" type="application/rss+xml" title={siteName} href={href('/rss.xml')} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href={href('/')}>{siteName}</a>
+      <nav aria-label="Navigation principale">
+        <a href={href('/films/')}>Films</a>
+        <a href={href('/livres/')}>Livres</a>
+        <a href={href('/a-propos/')}>À propos</a>
+      </nav>
+    </header>
+    <main><slot /></main>
+    <footer class="site-footer">
+      <a href={href('/rss.xml')}>Flux RSS</a>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --paper: #eef1ec; --ink: #17232b; --muted: #55646e; --line: #c9d1cb;
+    --film: #1d5c78; --livre: #66661c;
+    --serif: 'Newsreader', Georgia, serif; --sans: 'Instrument Sans', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #12191e; --ink: #e6ebe7; --muted: #94a3ad; --line: #2b3841; --film: #7cc0dd; --livre: #c6c66a; }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); color: var(--ink); }
+  body { margin: 0 auto; max-width: 42rem; padding: 0 1.25rem; font: 1.15rem/1.65 var(--serif); }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+  a:focus-visible { outline: 2px solid var(--film); outline-offset: 3px; }
+  h1, h2, h3 { line-height: 1.2; font-weight: 600; }
+  h1 { font-size: 2.1rem; margin: 2.5rem 0 0.4rem; }
+  h2 { font-size: 1.35rem; margin: 2.5rem 0 0.5rem; }
+  .site-header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding: 1.5rem 0 1rem; border-bottom: 1px solid var(--line); font-family: var(--sans); }
+  .brand { font-weight: 600; text-decoration: none; font-size: 1.05rem; }
+  .site-header nav { display: flex; gap: 1.25rem; font-size: 0.95rem; }
+  .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
+  .meta { font: 0.9rem/1.4 var(--sans); color: var(--muted); }
+  .kind-film { color: var(--film); } .kind-livre { color: var(--livre); }
+  .entries { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .entries li { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: 0.25rem 1.25rem; align-items: baseline;
+    padding: 0.9rem 0; border-bottom: 1px solid var(--line); }
+  .entries .date { font: 0.9rem var(--sans); color: var(--muted); }
+  .entries .name { font-weight: 600; }
+  .entries .summary { grid-column: 2 / 4; margin: 0; color: var(--muted); font-size: 1rem; }
+  .rating { font: 600 0.95rem var(--sans); white-space: nowrap; }
+  .notice { font: 0.95rem var(--sans); padding: 0.6rem 0.9rem; border-left: 3px solid var(--livre); background: color-mix(in srgb, var(--livre) 10%, transparent); }
+  .prose img { max-width: 100%; height: auto; }
+  .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
+  .cover { float: right; width: 8rem; margin: 0 0 1rem 1.5rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
+  @media (max-width: 34rem) {
+    .entries li { grid-template-columns: 1fr auto; }
+    .entries .date, .entries .summary { grid-column: 1 / 3; }
+  }
+</style>

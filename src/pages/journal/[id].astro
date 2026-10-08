@@ -1,0 +1,26 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { getJournal, href, fmtDate, fmtRating, typeLabel, verb } from '../../lib/content';
+
+export async function getStaticPaths() {
+  return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
+}
+const { log, work } = Astro.props;
+const { Content } = await render(log);
+const w = work.data;
+---
+<Base title={w.title} description={log.data.summary}>
+  <article>
+    <h1>{w.title}</h1>
+    <p class="meta">
+      <span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}.
+      {verb[w.type]} le {fmtDate(log.data.date)}{log.data.repeat && ' (deuxième passage ou plus)'}.
+      Note : <span class="rating">{fmtRating(log.data.rating)}</span>
+    </p>
+    {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
+    {log.data.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
+    <div class="prose"><Content /></div>
+    <p class="meta"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous mes passages</a></p>
+  </article>
+</Base>

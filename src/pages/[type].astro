@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+import EntryList from '../components/EntryList.astro';
+import { getJournal } from '../lib/content';
+
+export function getStaticPaths() {
+  return [
+    { params: { type: 'films' }, props: { kind: 'film', title: 'Films' } },
+    { params: { type: 'livres' }, props: { kind: 'livre', title: 'Livres' } },
+  ];
+}
+const { kind, title } = Astro.props;
+const entries = (await getJournal()).filter(({ work }) => work.data.type === kind);
+---
+<Base title={title}>
+  <h1>{title}</h1>
+  <p class="meta">{entries.length} {entries.length > 1 ? 'entrées' : 'entrée'}</p>
+  <EntryList entries={entries} showType={false} />
+</Base>
