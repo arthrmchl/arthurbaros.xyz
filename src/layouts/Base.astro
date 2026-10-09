@@ -113,6 +113,10 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
   .cover { float: right; width: 8rem; margin: 0 0 1rem 1.5rem; }
   .backdrop { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; margin: 0 0 1.5rem; }
+  /* Pastille : information courte (lieu, version, tag…), aux couleurs du type d'œuvre. */
+  .pill { padding: 0.1rem 0.6rem; border-radius: 999px; font: 600 0.8rem/1.6 var(--sans);
+    color: var(--film); background: color-mix(in srgb, var(--film) 14%, transparent); }
+  .pill.is-livre { color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
 
   /* Mise en page commune aux fiches d'œuvre et aux reviews (à la Letterboxd). */

@@ -1,7 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, excerpt, shareImage, fmtDate, fmtRange, fmtRating, fmtStars, capitalize, inProgress, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, href, excerpt, shareImage, fmtDate, fmtRange, fmtRating, fmtStars, inProgress, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -22,21 +22,25 @@ const when =
 // Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.
 const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${w.year}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
 
-// Informations sur le passage, affichées sous le texte.
-const details = (isFilm
+// Titre de l'aperçu : « Review de Titre (année) · ★★★½ », sans note pour une lecture en cours.
+const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
+const shareTitle = `Review de ${w.title} (${w.year})${stars ? ` · ${stars}` : ''}`;
+
+// Informations sur le passage, affichées en pastilles sous le texte.
+const pills = (isFilm
   ? [
-      l.venue && ['Lieu', venueLabel[l.venue]],
-      l.version && ['Version', versionLabel[l.version]],
-      ['Première fois', l.repeat ? 'Non' : 'Oui'],
-      l.accompanied !== undefined && ['Accompagné', l.accompanied ? 'Oui' : 'Non'],
+      l.venue && venueLabel[l.venue],
+      l.version && versionLabel[l.version],
+      l.repeat ? 'revisionnage' : 'première fois',
+      l.accompanied !== undefined && (l.accompanied ? 'accompagné' : 'seul'),
     ]
   : [
-      l.language && ['Langue', capitalize(l.language)],
-      ['Première lecture', l.repeat ? 'Non' : 'Oui'],
+      l.language,
+      l.repeat ? 'relecture' : 'première lecture',
     ]
-).filter(Boolean) as [string, string][];
+).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
-<Base title={`Review de ${w.title} (${w.year}), ${w.creator}`} description={shareDescription} shareTitle={`Review de ${w.title}`} article published={l.date ?? l.started}
+<Base title={`Review de ${w.title} (${w.year}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
   image={shareImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image du film ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
 
@@ -68,8 +72,8 @@ const details = (isFilm
       {l.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
       <div class="prose"><Content /></div>
 
-      <div class="details">
-        {details.map(([k, v]) => <p class="meta">{k} : {v}</p>)}
+      <div class="details pills">
+        {pills.map((v) => <span class:list={['pill', { 'is-livre': !isFilm }]}>{v}</span>)}
       </div>
 
       <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous {isFilm ? 'mes visionnages' : 'mes lectures'}</a></p>
@@ -83,5 +87,6 @@ const details = (isFilm
   .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
   .ongoing { display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
     font: 600 0.8rem/1.6 var(--sans); color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
+  .pills { gap: 0.5rem; }
   .back { margin: 1.5rem 0 0; }
 </style>

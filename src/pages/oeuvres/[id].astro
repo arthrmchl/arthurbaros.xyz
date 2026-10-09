@@ -42,7 +42,7 @@ const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} 
         <div class="details">
           {w.runtime && <p class="meta">Durée : {fmtRuntime(w.runtime)}</p>}
           {w.originalLanguage && <p class="meta">Langue originale : {capitalize(w.originalLanguage)}</p>}
-          {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li>#{t}</li>)}</ul>}
+          {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li class:list={['pill', { 'is-livre': w.type === 'livre' }]}>{t.toLowerCase()}</li>)}</ul>}
         </div>
       )}
     </div>
