@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .paper { fill: #eef1ec; } .film { fill: #1d5c78; } .livre { fill: #66661c; }
+    @media (prefers-color-scheme: dark) {
+      .paper { fill: #12191e; } .film { fill: #7cc0dd; } .livre { fill: #c6c66a; }
+    }
+  </style>
+  <rect class="paper" width="32" height="32" rx="7"/>
+  <circle class="film" cx="11" cy="16" r="7"/>
+  <rect class="livre" x="19" y="9" width="7" height="14" rx="1"/>
+</svg>
