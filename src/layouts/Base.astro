@@ -10,13 +10,13 @@ interface Props {
   article?: boolean; published?: Date;
 }
 const { title, description = site.description, shareTitle, article = false, published } = Astro.props;
-// Sans image propre à la page, on retombe sur celle du site, en vignette.
+// Sans image propre à la page, on retombe sur celle du site, au format paysage.
 const hasImage = Boolean(Astro.props.image);
 const image = Astro.props.image || site.image.src;
 const imageAlt = hasImage ? Astro.props.imageAlt : site.image.alt;
-const largeImage = hasImage && Astro.props.largeImage;
+const largeImage = hasImage ? Astro.props.largeImage : true;
 const siteName = site.name;
-const fullTitle = title ? `${title} · ${siteName}` : siteName;
+const fullTitle = title ? `${title} · ${siteName}` : `${siteName} · ${site.tagline}`;
 const ogTitle = shareTitle ?? title ?? siteName;
 // Les aperçus exigent des URL absolues : une image dans /public devient relative au site.
 const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site).href;
@@ -39,6 +39,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={imageUrl} />
+    {!hasImage && <meta property="og:image:width" content={String(site.image.width)} />}
+    {!hasImage && <meta property="og:image:height" content={String(site.image.height)} />}
     {imageAlt && <meta property="og:image:alt" content={imageAlt} />}
     {article && <meta property="article:author" content={site.author} />}
     {article && published && <meta property="article:published_time" content={published.toISOString().slice(0, 10)} />}

@@ -17,7 +17,7 @@ const w = work.data;
 const done = entries.filter(({ log }) => log.data.date).length;
 const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} (${w.year}) : fiche et ${w.type === 'film' ? 'visionnages' : 'lectures'}.`;
 ---
-<Base title={w.title} description={description}
+<Base title={`${w.title} (${w.year}), ${w.creator}`} description={description}
   image={shareImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image du film ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
 

@@ -36,7 +36,7 @@ const details = (isFilm
     ]
 ).filter(Boolean) as [string, string][];
 ---
-<Base title={w.title} description={shareDescription} shareTitle={`Review de ${w.title}`} article published={l.date ?? l.started}
+<Base title={`Review de ${w.title} (${w.year}), ${w.creator}`} description={shareDescription} shareTitle={`Review de ${w.title}`} article published={l.date ?? l.started}
   image={shareImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image du film ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
 
