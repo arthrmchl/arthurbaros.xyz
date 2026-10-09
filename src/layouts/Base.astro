@@ -1,9 +1,12 @@
 ---
 import { href } from '../lib/content';
-interface Props { title?: string; description?: string }
-const { title, description = 'Mes avis sur les films que je vois et les livres que je lis.' } = Astro.props;
+// `shareTitle` et `image` : aperçu affiché lors du partage d'un lien (Open Graph).
+interface Props { title?: string; description?: string; shareTitle?: string; image?: string; article?: boolean }
+const { title, description = 'Mes avis sur les films que je vois et les livres que je lis.', shareTitle, image, article = false } = Astro.props;
 const siteName = 'Journal de bord';
 const fullTitle = title ? `${title} · ${siteName}` : siteName;
+// Les aperçus exigent des URL absolues : une image dans /public devient relative au site.
+const imageUrl = image && new URL(image.startsWith('/') ? href(image) : image, Astro.site).href;
 ---
 <!doctype html>
 <html lang="fr">
@@ -12,6 +15,15 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={Astro.url.href} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:title" content={shareTitle ?? title ?? siteName} />
+    <meta property="og:description" content={description} />
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
     <link rel="alternate" type="application/rss+xml" title={siteName} href={href('/rss.xml')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

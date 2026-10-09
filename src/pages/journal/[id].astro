@@ -1,7 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, fmtDate, fmtRange, fmtRating, fmtStars, capitalize, inProgress, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, href, excerpt, shareImage, fmtDate, fmtRange, fmtRating, fmtStars, capitalize, inProgress, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -19,6 +19,9 @@ const when =
   : l.started ? `Commencé le ${fmtDate(l.started)}`
   : `${verb[w.type]} le ${fmtDate(l.date!)}`;
 
+// Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.
+const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${w.year}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
+
 // Informations sur le passage, affichées sous le texte.
 const details = (isFilm
   ? [
@@ -33,7 +36,7 @@ const details = (isFilm
     ]
 ).filter(Boolean) as [string, string][];
 ---
-<Base title={w.title} description={l.summary || undefined}>
+<Base title={w.title} description={shareDescription} shareTitle={`Review de ${w.title}`} image={shareImage(w.backdrop)} article>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
 
   <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->

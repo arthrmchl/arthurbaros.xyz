@@ -54,3 +54,20 @@ export async function getJournal() {
   }
   return journal.sort((a, b) => logDate(b.log.data).getTime() - logDate(a.log.data).getTime());
 }
+
+/** Début d'un texte Markdown en texte brut, coupé proprement vers `max` caractères (aperçus de liens). */
+export const excerpt = (markdown = '', max = 200) => {
+  const text = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')       // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')    // liens -> leur texte
+    .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '') // titres, citations, listes
+    .replace(/[*_`~]+/g, '')                    // emphase, code
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:.–-]+$/, '')}…`;
+};
+
+/** Image adaptée au partage de liens : les backdrops TMDB « original » sont trop lourds, on prend la version 1280 px. */
+export const shareImage = (url?: string) => url?.replace('/t/p/original/', '/t/p/w1280/');

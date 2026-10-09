@@ -18,9 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SITE: https://${{ github.repository_owner }}.github.io
-      # Si ton dépôt s'appelle <pseudo>.github.io, remplace par BASE: /
-      BASE: /${{ github.event.repository.name }}
+      # Domaine personnalisé (voir public/CNAME) : le site est servi à la racine.
+      SITE: https://arthurmichel.xyz
+      BASE: /
     steps:
       - uses: actions/checkout@v4
       - uses: withastro/action@v3
