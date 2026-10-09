@@ -5,7 +5,7 @@ import { getJournal, href, fmtRating, typeLabel, logDate } from '../lib/content'
 export async function GET(context: APIContext) {
   const journal = await getJournal();
   return rss({
-    title: 'Journal de bord',
+    title: 'arthurbaros.xyz',
     description: 'Mes avis sur les films et les livres.',
     site: context.site!,
     items: journal.slice(0, 50).map(({ log, work }) => ({

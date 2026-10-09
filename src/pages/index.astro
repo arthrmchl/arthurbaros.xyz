@@ -20,9 +20,6 @@ const shelves = [
 ] as const;
 ---
 <Base>
-  <h1>Films vus, livres lus</h1>
-  <p class="meta">Mes avis, dans l'ordre où je les écris.</p>
-
   {reading.map(({ log, work }) => (
     <a class="reading" href={href(`/journal/${log.id}/`)}>
       {work.data.cover && <img src={work.data.cover} alt="" />}

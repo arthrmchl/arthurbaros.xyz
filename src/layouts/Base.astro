@@ -3,7 +3,7 @@ import { href } from '../lib/content';
 // `shareTitle` et `image` : aperçu affiché lors du partage d'un lien (Open Graph).
 interface Props { title?: string; description?: string; shareTitle?: string; image?: string; article?: boolean }
 const { title, description = 'Mes avis sur les films que je vois et les livres que je lis.', shareTitle, image, article = false } = Astro.props;
-const siteName = 'Journal de bord';
+const siteName = 'arthurbaros.xyz';
 const fullTitle = title ? `${title} · ${siteName}` : siteName;
 // Les aperçus exigent des URL absolues : une image dans /public devient relative au site.
 const imageUrl = image && new URL(image.startsWith('/') ? href(image) : image, Astro.site).href;
