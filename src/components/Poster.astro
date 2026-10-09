@@ -1,0 +1,30 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { href } from '../lib/content';
+interface Props { work: CollectionEntry<'works'>; badge?: string; link?: string }
+// `link` : destination du clic (la fiche d'œuvre par défaut). Le slot sert de légende sous l'image.
+const { work, badge, link = `/oeuvres/${work.id}/` } = Astro.props;
+const image = work.data.poster ?? work.data.cover;
+---
+<li>
+  <a href={href(link)} title={`${work.data.title} (${work.data.year})`}>
+    {image
+      ? <img src={image} alt={work.data.title} loading="lazy" />
+      : <span class="placeholder">{work.data.title}</span>}
+    {badge && <span class="badge">{badge}</span>}
+  </a>
+  {Astro.slots.has('default') && <div class="caption"><slot /></div>}
+</li>
+
+<style>
+  a { position: relative; display: block; border-radius: 4px; overflow: hidden;
+    box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); transition: box-shadow 0.15s; }
+  a:hover { box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgb(0 0 0 / 0.2); }
+  /* Image dans ses proportions d'origine : ni recadrée ni déformée. */
+  img { display: block; width: 100%; height: auto; }
+  .placeholder { aspect-ratio: 2 / 3; display: flex; align-items: center; justify-content: center; padding: 0.5rem;
+    text-align: center; font: 600 0.9rem var(--sans); color: var(--muted); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .badge { position: absolute; left: 0.35rem; bottom: 0.35rem; padding: 0.1rem 0.4rem; border-radius: 3px;
+    font: 600 0.7rem var(--sans); color: var(--paper); background: var(--accent); }
+  .caption { margin-top: 0.4rem; font: 0.8rem/1.35 var(--sans); color: var(--muted); }
+</style>

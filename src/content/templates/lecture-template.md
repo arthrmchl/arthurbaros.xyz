@@ -1,6 +1,6 @@
 ---
-work: la-horde-du-contrevent
-started: 2026-10-08
+work: 
+started:  # début de lecture
 date:     # fin de lecture : à laisser vide si la lecture est en cours
 rating:   # à laisser vide si la lecture est en cours
 repeat: false

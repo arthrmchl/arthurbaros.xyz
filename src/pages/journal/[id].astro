@@ -1,7 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, fmtDate, fmtRating, fmtStars, verb, venueLabel } from '../../lib/content';
+import { getJournal, href, fmtDate, fmtRange, fmtRating, fmtStars, capitalize, inProgress, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -11,13 +11,27 @@ const { Content } = await render(log);
 const w = work.data;
 const l = log.data;
 const isFilm = w.type === 'film';
+const ongoing = inProgress(l);
+
+// Quand : « Vu le … » pour un film ; pour un livre, début et fin de lecture (la fin peut manquer).
+const when =
+  l.started && l.date ? `Lu ${fmtRange(l.started, l.date)}`
+  : l.started ? `Commencé le ${fmtDate(l.started)}`
+  : `${verb[w.type]} le ${fmtDate(l.date!)}`;
 
 // Informations sur le passage, affichées sous le texte.
-const details = [
-  l.venue && ['Lieu', venueLabel[l.venue]],
-  ['Première fois', l.repeat ? 'Non' : 'Oui'],
-  l.accompanied !== undefined && ['Accompagné', l.accompanied ? 'Oui' : 'Non'],
-].filter(Boolean) as [string, string][];
+const details = (isFilm
+  ? [
+      l.venue && ['Lieu', venueLabel[l.venue]],
+      l.version && ['Version', versionLabel[l.version]],
+      ['Première fois', l.repeat ? 'Non' : 'Oui'],
+      l.accompanied !== undefined && ['Accompagné', l.accompanied ? 'Oui' : 'Non'],
+    ]
+  : [
+      l.language && ['Langue', capitalize(l.language)],
+      ['Première lecture', l.repeat ? 'Non' : 'Oui'],
+    ]
+).filter(Boolean) as [string, string][];
 ---
 <Base title={w.title} description={l.summary || undefined}>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
@@ -38,10 +52,13 @@ const details = [
         <div class="title-line">
           <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{w.year}</span>
         </div>
-        <p class="stars rating-big" aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
-          {l.rating > 0 ? fmtStars(l.rating) : '—'}
-        </p>
-        <p class="meta">{verb[w.type]} le {fmtDate(l.date)}</p>
+        {!isFilm && <p class="meta">de {w.creator}</p>}
+        {l.rating !== undefined
+          ? <p class:list={['stars rating-big', { 'is-livre': !isFilm }]} aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
+              {l.rating > 0 ? fmtStars(l.rating) : '—'}
+            </p>
+          : ongoing && <p class="ongoing">Lecture en cours</p>}
+        <p class="meta">{when}</p>
       </header>
 
       {l.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
@@ -51,7 +68,7 @@ const details = [
         {details.map(([k, v]) => <p class="meta">{k} : {v}</p>)}
       </div>
 
-      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous mes {isFilm ? 'visionnages' : 'passages'}</a></p>
+      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous {isFilm ? 'mes visionnages' : 'mes lectures'}</a></p>
     </div>
   </article>
 </Base>
@@ -60,5 +77,7 @@ const details = [
   h1 a { text-decoration: none; }
   h1 a:hover { text-decoration: underline; }
   .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
+  .ongoing { display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
+    font: 600 0.8rem/1.6 var(--sans); color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
   .back { margin: 1.5rem 0 0; }
 </style>

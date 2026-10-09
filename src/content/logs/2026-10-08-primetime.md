@@ -5,6 +5,7 @@ rating: 2
 repeat: false
 spoilers: false
 venue: cinema
+version: vostfr
 accompanied: false
 summary: ""
 ---

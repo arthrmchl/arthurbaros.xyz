@@ -20,10 +20,17 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
 1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (voir ci-dessous).
 
    - **Film** : `title`, `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
-   - **Livre** : `title`, `type: livre`, `creator`, `year`, puis en option `cover`, `tags`.
+   - **Livre** : `title`, `type: livre`, `creator`, `year`, puis en option `originalLanguage` (langue originale), `cover` (couverture), `tags`.
    - `poster`, `backdrop` et `cover` acceptent une URL ou un chemin vers un fichier de `public/`.
-2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md`, avec `work`, `date`, `rating` (0 à 5, par pas de 0,5), puis ton texte.
+2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md` (modèles dans `templates/`), puis ton texte.
+
+   - **Visionnage** : `work`, `date`, `rating` (0 à 5, par pas de 0,5), puis en option `venue` (`cinema` ou `maison`), `version` (`vf` ou `vostfr`), `accompanied`, `repeat`.
+   - **Lecture** : `work`, `started` (début), `language`, puis `date` (fin) et `rating` une fois le livre terminé : sans `date`, la lecture s'affiche « en cours ».
 3. `git add . && git commit -m "Review : ..." && git push`
+
+## Livres à lire (et films à voir)
+
+Une fiche d'œuvre sans aucun fichier dans `logs/` est considérée comme « à lire » (ou « à voir ») : il suffit de créer la fiche dans `works/livres/` à partir de `templates/livre-template.md`. Elle apparaît dans la section **À lire** de la page Livres, et quitte cette liste dès que tu crées l'entrée de lecture correspondante (avec `started`).
 
 Un oubli ou une faute dans le frontmatter (note hors limites, œuvre inconnue) fait échouer le build avec un message explicite.
 

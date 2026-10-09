@@ -1,7 +1,9 @@
 ---
-title: "La Horde du Contrevent"
+title: ""
 type: livre
-creator: "Alain Damasio"
-year: 2004
-tags: [science-fiction, fantasy, roman]
+creator: ""           # auteur·ice(s), séparé·es par des virgules
+year:                 # année de publication
+originalLanguage: ""  # langue originale, ex. « français »
+cover: ""             # couverture : URL ou chemin dans /public
+tags: []
 ---

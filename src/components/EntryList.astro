@@ -1,11 +1,11 @@
 ---
-import { href, fmtDate, fmtRating, typeLabel } from '../lib/content';
+import { href, fmtDate, fmtRating, typeLabel, logDate } from '../lib/content';
 const { entries, showType = true } = Astro.props;
 ---
 <ul class="entries">
   {entries.map(({ log, work }) => (
     <li>
-      <time class="date" datetime={log.data.date.toISOString().slice(0, 10)}>{fmtDate(log.data.date)}</time>
+      <time class="date" datetime={logDate(log.data).toISOString().slice(0, 10)}>{fmtDate(logDate(log.data))}</time>
       <div>
         <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
         <span class="meta">
@@ -14,7 +14,7 @@ const { entries, showType = true } = Astro.props;
           {log.data.repeat && ' — revu'}
         </span>
       </div>
-      <span class="rating">{fmtRating(log.data.rating)}</span>
+      <span class="rating">{log.data.rating !== undefined ? fmtRating(log.data.rating) : log.data.date ? '—' : 'En cours'}</span>
       {log.data.summary && <p class="summary">{log.data.summary}</p>}
     </li>
   ))}

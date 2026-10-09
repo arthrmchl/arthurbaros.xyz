@@ -1,17 +1,86 @@
 ---
 import Base from '../layouts/Base.astro';
-import EntryList from '../components/EntryList.astro';
-import { getJournal, href } from '../lib/content';
+import Poster from '../components/Poster.astro';
+import { getJournal, href, logDate, fmtDate, fmtShortDate, fmtStars, inProgress } from '../lib/content';
 
 const journal = await getJournal();
-const years = [...new Set(journal.map(({ log }) => log.data.date.getUTCFullYear()))].sort((a, b) => b - a);
+const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
+
+// Lectures en cours : la plus récente entrée de chaque livre, si elle n'a pas de date de fin.
+const seen = new Set<string>();
+const reading = journal
+  .filter(({ work }) => work.data.type === 'livre' && !seen.has(work.id) && seen.add(work.id))
+  .filter(({ log }) => inProgress(log.data));
+// Derniers passages terminés, une rangée par type.
+const recent = (kind: 'film' | 'livre') =>
+  journal.filter(({ log, work }) => work.data.type === kind && !inProgress(log.data)).slice(0, 5);
+const shelves = [
+  { kind: 'film', title: 'Derniers films vus', all: 'Tous les films', route: '/films/', entries: recent('film') },
+  { kind: 'livre', title: 'Derniers livres lus', all: 'Tous les livres', route: '/livres/', entries: recent('livre') },
+] as const;
 ---
 <Base>
   <h1>Films vus, livres lus</h1>
   <p class="meta">Mes avis, dans l'ordre où je les écris.</p>
-  <EntryList entries={journal.slice(0, 20)} />
+
+  {reading.map(({ log, work }) => (
+    <a class="reading" href={href(`/journal/${log.id}/`)}>
+      {work.data.cover && <img src={work.data.cover} alt="" />}
+      <div>
+        <p class="meta">En train de lire · depuis le {fmtDate(log.data.started!)}</p>
+        <p class="title">{work.data.title}</p>
+        <p class="meta">{work.data.creator}, {work.data.year}</p>
+        {log.data.summary && <p class="summary">{log.data.summary}</p>}
+      </div>
+    </a>
+  ))}
+
+  {shelves.map(({ kind, title, all, route, entries }) => (
+    <section>
+      <div class="shelf-head">
+        <h2>{title}</h2>
+        <a class="meta" href={href(route)}>{all} →</a>
+      </div>
+      {entries.length
+        ? <ul class="posters" style={`--accent: var(--${kind})`}>
+            {entries.map(({ log, work }) => (
+              <Poster work={work} link={`/journal/${log.id}/`}>
+                <span class:list={['stars', { 'is-livre': kind === 'livre' }]}>{fmtStars(log.data.rating!)}</span>
+                <br />{fmtShortDate(log.data.date!)}{log.data.repeat && (kind === 'film' ? ' · revu' : ' · relu')}
+              </Poster>
+            ))}
+          </ul>
+        : <p class="meta">Rien pour l'instant.</p>}
+    </section>
+  ))}
+
   <p class="meta">
     Bilans par année :
     {years.map((y, i) => <>{i > 0 && ', '}<a href={href(`/annees/${y}/`)}>{y}</a></>)}
   </p>
 </Base>
+
+<style>
+  /* Lecture en cours : grande couverture et fond teinté. */
+  .reading { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1.25rem; align-items: center; margin: 2rem 0 0;
+    padding: 1rem; border-radius: 6px; text-decoration: none; background: color-mix(in srgb, var(--livre) 12%, transparent); }
+  .reading:hover .title { text-decoration: underline; }
+  .reading img { display: block; width: 100%; height: auto; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); }
+  .reading p { margin: 0; }
+  .reading .meta:first-child { color: var(--livre); font-weight: 600; }
+  .reading .title { font-size: 1.5rem; font-weight: 600; line-height: 1.2; margin: 0.3rem 0 0.2rem; }
+  .reading .summary { margin-top: 0.5rem; font-size: 1rem; color: var(--muted); }
+  .shelf-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+  .shelf-head a { text-decoration: none; }
+  .shelf-head a:hover { text-decoration: underline; }
+  /* Une rangée de 5 ; les images s'alignent par le bas au-dessus des légendes. */
+  .posters { list-style: none; padding: 0; margin: 1rem 0 0; display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; align-items: end; }
+  section + p.meta { margin-top: 2.5rem; }
+  @media (max-width: 34rem) {
+    .reading { grid-template-columns: 5rem 1fr; gap: 1rem; }
+    .reading .title { font-size: 1.25rem; }
+    .posters { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+    .posters > :global(li:nth-child(n + 4)) { display: none; }
+  }
+</style>

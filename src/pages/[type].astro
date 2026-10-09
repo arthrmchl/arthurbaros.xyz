@@ -1,7 +1,8 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import EntryList from '../components/EntryList.astro';
-import { getJournal, href } from '../lib/content';
+import Poster from '../components/Poster.astro';
+import { getJournal, inProgress, todoLabel } from '../lib/content';
 
 export function getStaticPaths() {
   return [
@@ -11,41 +12,42 @@ export function getStaticPaths() {
 }
 const { kind, title } = Astro.props;
 const entries = (await getJournal()).filter(({ work }) => work.data.type === kind);
-// Films vus : une seule fois chacun, du plus récemment vu au plus ancien (le journal est déjà trié).
-const films = [...new Map(entries.map(({ work }) => [work.id, work])).values()];
+// Une seule fois par œuvre, de la plus récente à la plus ancienne (le journal est déjà trié).
+// Pour un livre, l'entrée la plus récente dit s'il est en cours de lecture.
+const seen = new Set<string>();
+const works = entries
+  .filter(({ work }) => !seen.has(work.id) && seen.add(work.id))
+  .map(({ log, work }) => ({ work, reading: inProgress(log.data) }));
+// Fiches sans aucune entrée de journal : œuvres à lire / à voir, par ordre alphabétique.
+const todo = (await getCollection('works'))
+  .filter((w) => w.data.type === kind && !seen.has(w.id))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr'));
+const reading = works.filter((w) => w.reading).length;
+const done = works.length - reading;
+const count = kind === 'film'
+  ? `${done} ${done > 1 ? 'films vus' : 'film vu'}`
+  : [done && `${done} ${done > 1 ? 'livres lus' : 'livre lu'}`, reading && `${reading} en cours`].filter(Boolean).join(' · ') || '0 livre lu';
 ---
 <Base title={title}>
   <h1>{title}</h1>
-  {kind === 'film'
-    ? <>
-        <p class="meta">{films.length} {films.length > 1 ? 'films vus' : 'film vu'}</p>
-        <ul class="posters">
-          {films.map((work) => (
-            <li>
-              <a href={href(`/oeuvres/${work.id}/`)} title={`${work.data.title} (${work.data.year})`}>
-                {work.data.poster
-                  ? <img src={work.data.poster} alt={work.data.title} loading="lazy" />
-                  : <span class="placeholder">{work.data.title}</span>}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </>
-    : <>
-        <p class="meta">{entries.length} {entries.length > 1 ? 'entrées' : 'entrée'}</p>
-        <EntryList entries={entries} showType={false} />
-      </>}
+  <p class="meta">{count}</p>
+  <ul class="posters" style={`--accent: var(--${kind})`}>
+    {works.map(({ work, reading }) => <Poster work={work} badge={reading ? 'En cours' : undefined} />)}
+  </ul>
+  {todo.length > 0 && (
+    <>
+      <h2>{todoLabel[kind]}</h2>
+      <p class="meta">{todo.length} {kind === 'film' ? (todo.length > 1 ? 'films' : 'film') : (todo.length > 1 ? 'livres' : 'livre')}</p>
+      <ul class="posters" style={`--accent: var(--${kind})`}>
+        {todo.map((work) => <Poster work={work} />)}
+      </ul>
+    </>
+  )}
 </Base>
 
 <style>
   .posters { list-style: none; padding: 0; margin: 1.5rem 0; display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem; }
-  .posters a { display: block; aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden;
-    box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); transition: box-shadow 0.15s; }
-  .posters a:hover { box-shadow: 0 0 0 2px var(--film), 0 4px 12px rgb(0 0 0 / 0.2); }
-  .posters img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .placeholder { display: flex; align-items: center; justify-content: center; height: 100%; padding: 0.5rem;
-    text-align: center; font: 600 0.9rem var(--sans); color: var(--muted); background: color-mix(in srgb, var(--film) 10%, transparent); }
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem; align-items: end; }
   @media (max-width: 34rem) {
     .posters { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
   }

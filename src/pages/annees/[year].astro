@@ -1,26 +1,28 @@
 ---
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
-import { getJournal } from '../../lib/content';
+import { getJournal, logDate } from '../../lib/content';
 
 export async function getStaticPaths() {
   const journal = await getJournal();
-  const years = [...new Set(journal.map(({ log }) => log.data.date.getUTCFullYear()))];
+  const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))];
   return years.map((year) => ({
     params: { year: String(year) },
-    props: { year, entries: journal.filter(({ log }) => log.data.date.getUTCFullYear() === year) },
+    props: { year, entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year) },
   }));
 }
 const { year, entries } = Astro.props;
 const films = entries.filter((e) => e.work.data.type === 'film').length;
 const livres = entries.filter((e) => e.work.data.type === 'livre').length;
-const avg = entries.reduce((s, e) => s + e.log.data.rating, 0) / entries.length;
+// Moyenne sur les entrées notées seulement (une lecture en cours n'a pas encore de note).
+const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
+const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
 ---
 <Base title={`Bilan ${year}`}>
   <h1>{year}</h1>
   <p class="meta">
     {films} {films > 1 ? 'films' : 'film'}, {livres} {livres > 1 ? 'livres' : 'livre'}.
-    Note moyenne : {avg.toFixed(1).replace('.', ',')}/5.
+    {ratings.length > 0 && <>Note moyenne : {avg.toFixed(1).replace('.', ',')}/5.</>}
   </p>
   <EntryList entries={entries} />
 </Base>

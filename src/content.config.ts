@@ -16,6 +16,7 @@ const works = defineCollection({
       director: z.string().optional(),  // réalisateur (films)
       year: z.number().int(),           // année de sortie / de publication
       runtime: z.number().int().positive().optional(), // durée en minutes (films)
+      originalLanguage: z.string().optional(), // langue originale (livres), ex. « français »
       poster: z.string().optional(),    // affiche (films) : URL ou chemin dans /public
       backdrop: z.string().optional(),  // image de fond (films) : URL ou chemin dans /public
       cover: z.string().optional(),     // couverture (livres) : URL ou chemin dans /public
@@ -33,19 +34,34 @@ const works = defineCollection({
     .transform((w) => ({ ...w, creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)! })),
 });
 
+// Un champ laissé vide dans le frontmatter (`date:`) vaut null : on le traite comme absent.
+const optional = <T extends z.ZodTypeAny>(schema: T) => z.preprocess((v) => v ?? undefined, schema.optional());
+
 // Entrée de journal : un visionnage ou une lecture, avec ton avis.
 const logs = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/logs', generateId }),
-  schema: z.object({
-    work: reference('works'),
-    date: z.coerce.date(),                   // date du visionnage / de la fin de lecture
-    rating: z.number().min(0).max(5).multipleOf(0.5),
-    repeat: z.boolean().default(false),      // revisionnage / relecture
-    spoilers: z.boolean().default(false),
-    venue: z.enum(['cinema', 'maison']).optional(), // lieu du visionnage (films)
-    accompanied: z.boolean().optional(),     // visionnage accompagné ou seul (films)
-    summary: z.string().optional(),          // phrase d'accroche (listes, RSS)
-  }),
+  schema: z
+    .object({
+      work: reference('works'),
+      started: optional(z.coerce.date()),       // début de lecture (livres)
+      date: optional(z.coerce.date()),          // date du visionnage / de la fin de lecture (absente si lecture en cours)
+      rating: optional(z.number().min(0).max(5).multipleOf(0.5)), // absente si lecture en cours
+      repeat: z.boolean().default(false),      // revisionnage / relecture
+      spoilers: z.boolean().default(false),
+      venue: z.enum(['cinema', 'maison']).optional(), // lieu du visionnage (films)
+      accompanied: z.boolean().optional(),     // visionnage accompagné ou seul (films)
+      version: z.enum(['vf', 'vostfr']).optional(), // version vue (films)
+      language: optional(z.string()),          // langue de lecture (livres), ex. « français »
+      summary: z.string().optional(),          // phrase d'accroche (listes, RSS)
+    })
+    .superRefine((l, ctx) => {
+      if (!l.date && !l.started) {
+        ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée doit avoir une `date` (fin) ou un `started` (début de lecture).' });
+      }
+      if (l.started && l.date && l.started > l.date) {
+        ctx.addIssue({ code: 'custom', path: ['started'], message: '`started` doit précéder `date`.' });
+      }
+    }),
 });
 
 export const collections = { works, logs };

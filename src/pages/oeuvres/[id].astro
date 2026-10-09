@@ -1,8 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import EntryList from '../../components/EntryList.astro';
-import { getJournal, typeLabel, fmtRuntime, href, fmtDate, fmtRating, fmtStars, venueLabel, verb } from '../../lib/content';
+import { getJournal, fmtRuntime, href, fmtDate, fmtRating, fmtStars, fmtRange, capitalize, venueLabel, versionLabel, verb, todoLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -14,6 +13,8 @@ export async function getStaticPaths() {
 const { work, entries } = Astro.props;
 const { Content } = await render(work);
 const w = work.data;
+// Lectures en cours exclues du compteur « Lu N fois ».
+const done = entries.filter(({ log }) => log.data.date).length;
 ---
 <Base title={w.title}>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
@@ -24,28 +25,26 @@ const w = work.data;
       <aside class="side">
         {w.poster && <img class="poster" src={w.poster} alt={`Affiche : ${w.title}`} />}
         {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
-        {entries.length > 0 && <p class="meta">{verb[w.type]} {entries.length} fois</p>}
+        {done > 0 && <p class="meta">{verb[w.type]} {done} fois</p>}
       </aside>
     )}
 
     <div class="info">
-      {w.type === 'film'
-        ? <header class="title-line"><h1>{w.title}</h1> <span class="meta">{w.creator}&nbsp;– {w.year}</span></header>
-        : <header>
-            <h1>{w.title}</h1>
-            <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}</p>
-          </header>}
+      <header class="title-line"><h1>{w.title}</h1> <span class="meta">{w.creator}&nbsp;– {w.year}</span></header>
       <div class="prose"><Content /></div>
-      {(w.runtime || w.tags.length > 0) && (
+      {(w.runtime || w.originalLanguage || w.tags.length > 0) && (
         <div class="details">
           {w.runtime && <p class="meta">Durée : {fmtRuntime(w.runtime)}</p>}
+          {w.originalLanguage && <p class="meta">Langue originale : {capitalize(w.originalLanguage)}</p>}
           {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li>#{t}</li>)}</ul>}
         </div>
       )}
     </div>
   </article>
 
-  {w.type === 'film'
+  {entries.length === 0
+    ? <p class="notice">Pas encore {w.type === 'film' ? 'vu' : 'commencé'} : dans ma liste <a href={href(`/${typeRoute[w.type]}/`)}>{todoLabel[w.type].toLowerCase()}</a>.</p>
+    : w.type === 'film'
     ? <>
         <h2>Mes visionnages</h2>
         <ul class="viewings">
@@ -58,25 +57,45 @@ const w = work.data;
                 {log.data.rating > 0 ? fmtStars(log.data.rating) : '—'}
               </span>
               <span class="meta">{log.data.venue ? venueLabel[log.data.venue] : '—'}</span>
+              <span class="meta">{log.data.version ? versionLabel[log.data.version] : '—'}</span>
               <span class="meta">{log.data.repeat ? 'Revisionnage' : 'Première fois'}</span>
             </li>
           ))}
         </ul>
       </>
     : <>
-        <h2>Mes passages</h2>
-        <EntryList entries={entries} showType={false} />
+        <h2>Mes lectures</h2>
+        <ul class="viewings readings">
+          {entries.map(({ log }) => (
+            <li>
+              <a class="date" href={href(`/journal/${log.id}/`)}>
+                {log.data.started && log.data.date ? capitalize(fmtRange(log.data.started, log.data.date))
+                  : log.data.started ? `Depuis le ${fmtDate(log.data.started)}`
+                  : fmtDate(log.data.date!)}
+              </a>
+              {log.data.rating !== undefined
+                ? <span class="stars is-livre" aria-label={`Note : ${fmtRating(log.data.rating)}`} title={fmtRating(log.data.rating)}>
+                    {log.data.rating > 0 ? fmtStars(log.data.rating) : '—'}
+                  </span>
+                : <span class="meta">{log.data.date ? '—' : 'En cours'}</span>}
+              <span class="meta">{log.data.language ? capitalize(log.data.language) : '—'}</span>
+              <span class="meta">{log.data.repeat ? 'Relecture' : 'Première lecture'}</span>
+            </li>
+          ))}
+        </ul>
       </>}
 </Base>
 
 <style>
-  /* Visionnages : date, note, lieu, première fois. */
+  /* Visionnages : date, note, lieu, version, première fois. */
   .viewings { list-style: none; padding: 0; margin: 1.5rem 0; }
-  .viewings li { display: grid; grid-template-columns: 9rem 6rem 1fr auto; gap: 0.25rem 2.5rem; align-items: baseline;
+  .viewings li { display: grid; grid-template-columns: 9rem 6rem 1fr 5rem auto; gap: 0.25rem 2.5rem; align-items: baseline;
     padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
   .viewings .date { font: 600 0.95rem var(--sans); }
+  /* Lectures : la période prend plus de place qu'une date. */
+  .readings li { grid-template-columns: 15rem 6rem 1fr auto; gap: 0.25rem 1.5rem; }
 
   @media (max-width: 34rem) {
-    .viewings li { grid-template-columns: 1fr auto; }
+    .viewings li, .readings li { grid-template-columns: 1fr auto; }
   }
 </style>
