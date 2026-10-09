@@ -2,8 +2,8 @@
 export const site = {
   name: 'arthurbaros.xyz',
   description: 'Mes avis sur les films que je vois et les livres que je lis.',
-  // Complète le nom dans le titre de l'accueil (50 à 60 caractères au total pour les moteurs de recherche).
-  tagline: 'Mes avis sur les films et les livres',
+  // Complète le nom dans le titre de l'accueil.
+  tagline: 'Reviews et critiques',
   author: 'Arthur Baros',
   locale: 'fr_FR',
   // Image de partage par défaut (dans /public, 1200×630) : générée par scripts/og-image.mjs.

@@ -20,7 +20,7 @@ const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
 const description = `Bilan ${year} : ${films} ${films > 1 ? 'films' : 'film'} et ${livres} ${livres > 1 ? 'livres' : 'livre'}`
   + (ratings.length > 0 ? `, note moyenne ${avg.toFixed(1).replace('.', ',')}/5.` : '.');
 ---
-<Base title={`Bilan ${year} : films et livres de l’année`} description={description}>
+<Base title={`Bilan ${year} : reviews et critiques de l’année`} description={description}>
   <h1>{year}</h1>
   <p class="meta">
     {films} {films > 1 ? 'films' : 'film'}, {livres} {livres > 1 ? 'livres' : 'livre'}.
