@@ -1,12 +1,25 @@
 ---
 import { href } from '../lib/content';
-// `shareTitle` et `image` : aperçu affiché lors du partage d'un lien (Open Graph).
-interface Props { title?: string; description?: string; shareTitle?: string; image?: string; article?: boolean }
-const { title, description = 'Mes avis sur les films que je vois et les livres que je lis.', shareTitle, image, article = false } = Astro.props;
-const siteName = 'arthurbaros.xyz';
+import { site } from '../lib/site';
+// `shareTitle`, `image` et `imageAlt` : aperçu affiché lors du partage d'un lien (Open Graph).
+// `largeImage` : grande image au-dessus de l'aperçu (image paysage) plutôt qu'une vignette.
+// `published` : date de publication d'un article (review).
+interface Props {
+  title?: string; description?: string; shareTitle?: string;
+  image?: string; imageAlt?: string; largeImage?: boolean;
+  article?: boolean; published?: Date;
+}
+const { title, description = site.description, shareTitle, article = false, published } = Astro.props;
+// Sans image propre à la page, on retombe sur celle du site, en vignette.
+const hasImage = Boolean(Astro.props.image);
+const image = Astro.props.image || site.image.src;
+const imageAlt = hasImage ? Astro.props.imageAlt : site.image.alt;
+const largeImage = hasImage && Astro.props.largeImage;
+const siteName = site.name;
 const fullTitle = title ? `${title} · ${siteName}` : siteName;
+const ogTitle = shareTitle ?? title ?? siteName;
 // Les aperçus exigent des URL absolues : une image dans /public devient relative au site.
-const imageUrl = image && new URL(image.startsWith('/') ? href(image) : image, Astro.site).href;
+const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site).href;
 ---
 <!doctype html>
 <html lang="fr">
@@ -15,15 +28,25 @@ const imageUrl = image && new URL(image.startsWith('/') ? href(image) : image, A
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <meta name="author" content={site.author} />
+    <meta name="theme-color" content={site.themeColor.light} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={site.themeColor.dark} media="(prefers-color-scheme: dark)" />
     <link rel="canonical" href={Astro.url.href} />
     <meta property="og:site_name" content={siteName} />
-    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale" content={site.locale} />
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:url" content={Astro.url.href} />
-    <meta property="og:title" content={shareTitle ?? title ?? siteName} />
+    <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={description} />
-    {imageUrl && <meta property="og:image" content={imageUrl} />}
-    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta property="og:image" content={imageUrl} />
+    {imageAlt && <meta property="og:image:alt" content={imageAlt} />}
+    {article && <meta property="article:author" content={site.author} />}
+    {article && published && <meta property="article:published_time" content={published.toISOString().slice(0, 10)} />}
+    <meta name="twitter:card" content={largeImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    {imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
     <link rel="icon" href={href('/favicon.ico')} sizes="32x32" />
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={href('/apple-touch-icon.png')} />

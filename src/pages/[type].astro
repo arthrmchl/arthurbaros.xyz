@@ -28,7 +28,7 @@ const count = kind === 'film'
   ? `${done} ${done > 1 ? 'films vus' : 'film vu'}`
   : [done && `${done} ${done > 1 ? 'livres lus' : 'livre lu'}`, reading && `${reading} en cours`].filter(Boolean).join(' · ') || '0 livre lu';
 ---
-<Base title={title}>
+<Base title={title} description={`${kind === 'film' ? 'Les films que j’ai vus' : 'Les livres que j’ai lus'}, avec mes notes et mes avis : ${count}.`}>
   <h1>{title}</h1>
   <p class="meta">{count}</p>
   <ul class="posters" style={`--accent: var(--${kind})`}>

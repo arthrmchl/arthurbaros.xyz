@@ -17,8 +17,10 @@ const livres = entries.filter((e) => e.work.data.type === 'livre').length;
 // Moyenne sur les entrées notées seulement (une lecture en cours n'a pas encore de note).
 const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
 const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
+const description = `Bilan ${year} : ${films} ${films > 1 ? 'films' : 'film'} et ${livres} ${livres > 1 ? 'livres' : 'livre'}`
+  + (ratings.length > 0 ? `, note moyenne ${avg.toFixed(1).replace('.', ',')}/5.` : '.');
 ---
-<Base title={`Bilan ${year}`}>
+<Base title={`Bilan ${year}`} description={description}>
   <h1>{year}</h1>
   <p class="meta">
     {films} {films > 1 ? 'films' : 'film'}, {livres} {livres > 1 ? 'livres' : 'livre'}.

@@ -2,7 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { href } from '../lib/content';
 ---
-<Base title="À propos">
+<Base title="À propos" description="Regarder un film pour en ajouter trois dans la watchlist. Pareil pour les livres."
+  image="/arthur.jpg" imageAlt="Arthur enfant, casquette sur la tête, buvant une brique de jus sur un banc">
   <header class="intro">
     <img class="portrait" src={href('/arthur.jpg')} alt="Arthur enfant, casquette sur la tête, buvant une brique de jus sur un banc" width="480" height="480" />
     <div>
