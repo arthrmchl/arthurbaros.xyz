@@ -64,7 +64,7 @@ const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} 
               </span>
               <span class="meta">{log.data.venue ? venueLabel[log.data.venue] : '—'}</span>
               <span class="meta">{log.data.version ? versionLabel[log.data.version] : '—'}</span>
-              <span class="meta">{log.data.repeat ? 'Revisionnage' : 'Première fois'}</span>
+              <span class="meta">{log.data.repeat ? 'Revisionnage' : 'Premier visionnage'}</span>
             </li>
           ))}
         </ul>
@@ -93,7 +93,7 @@ const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} 
 </Base>
 
 <style>
-  /* Visionnages : date, note, lieu, version, première fois. */
+  /* Visionnages : date, note, lieu, version, premier visionnage. */
   .viewings { list-style: none; padding: 0; margin: 1.5rem 0; }
   .viewings li { display: grid; grid-template-columns: 9rem 6rem 1fr 5rem auto; gap: 0.25rem 2.5rem; align-items: baseline;
     padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
