@@ -34,7 +34,7 @@ const imageUrl = image && new URL(image.startsWith('/') ? href(image) : image, A
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href={href('/')}>{siteName}</a>
+      <a class="brand" href={href('/')}><svg class="logo" viewBox="4 9 22 14" aria-hidden="true"><circle cx="11" cy="16" r="7" fill="var(--film)" /><rect x="19" y="9" width="7" height="14" rx="1" fill="var(--livre)" /></svg><span>{siteName}</span></a>
       <nav aria-label="Navigation principale">
         <a href={href('/films/')}>Films</a>
         <a href={href('/livres/')}>Livres</a>
@@ -65,9 +65,13 @@ const imageUrl = image && new URL(image.startsWith('/') ? href(image) : image, A
   h1, h2, h3 { line-height: 1.2; font-weight: 600; }
   h1 { font-size: 2.1rem; margin: 2.5rem 0 0.4rem; }
   h2 { font-size: 1.35rem; margin: 2.5rem 0 0.5rem; }
-  .site-header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+  .site-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
     padding: 1.5rem 0 1rem; border-bottom: 1px solid var(--line); font-family: var(--sans); }
-  .brand { font-weight: 600; text-decoration: none; font-size: 1.05rem; }
+  .brand { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 600; text-decoration: none; font-size: 1.05rem; line-height: 1; }
+  /* Logo recadré sur ses formes (sans le fond du favicon), à la hauteur des majuscules et jambages. */
+  .brand .logo { display: block; height: 1.1em; width: calc(1.1em * 22 / 14); }
+  /* Remonte le nom pour que le logo soit à peu près centré sur ses minuscules (hampes et jambages ignorés). */
+  .brand span { position: relative; top: -0.08em; }
   .site-header nav { display: flex; gap: 1.25rem; font-size: 0.95rem; }
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
   .meta { font: 0.9rem/1.4 var(--sans); color: var(--muted); }
