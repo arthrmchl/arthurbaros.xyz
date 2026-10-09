@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Domaine personnalisé (voir public/CNAME) : le site est servi à la racine.
-      SITE: https://arthurmichel.xyz
+      SITE: https://arthurbaros.xyz
       BASE: /
     steps:
       - uses: actions/checkout@v4
