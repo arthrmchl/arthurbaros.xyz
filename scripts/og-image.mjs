@@ -1,27 +1,42 @@
-// Génère l'image de partage par défaut (public/og.png, 1200×630) aux couleurs du site.
-// À relancer après un changement de nom, d'accroche ou de couleurs : node scripts/og-image.mjs
+// Génère l'image de partage par défaut (public/og.png, 1200×630) : logo et nom du site, centrés,
+// avec la même mise en page que le header du site (.brand dans src/layouts/Base.astro).
+// À relancer après un changement de nom ou de couleurs : node scripts/og-image.mjs
 import sharp from 'sharp';
+import { fileURLToPath } from 'node:url';
+import { loadFont, textPath } from './font-path.mjs';
 
-const paper = '#eef1ec', ink = '#17232b', muted = '#55646e', line = '#c9d1cb', film = '#1d5c78', livre = '#66661c';
-const serif = "Newsreader, Georgia, serif";
+const paper = '#eef1ec', ink = '#17232b', film = '#1d5c78', livre = '#66661c';
+const width = 1200, height = 630;
+// Police du nom dans le header (Instrument Sans 600), fournie dans scripts/fonts/.
+const font = loadFont(fileURLToPath(new URL('./fonts/InstrumentSans-SemiBold.ttf', import.meta.url)));
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="${paper}"/>
-  <!-- Logo et nom du site -->
-  <g transform="translate(80 80) scale(4)">
-    <circle cx="7" cy="7" r="7" fill="${film}"/>
-    <rect x="15" y="0" width="7" height="14" rx="1" fill="${livre}"/>
+// Cotes du header, pour une taille de police F :
+// logo haut de 1.1 F, espace de 0.6rem pour un nom en 1.05rem, nom en line-height 1 centré sur le logo puis remonté de 0.05 F.
+const F = 100;
+const logoH = 1.1 * F, logoW = logoH * 22 / 14, gap = (0.6 / 1.05) * F;
+// Ligne de base : haut de la boîte du nom, plus la demi-interligne (négative en line-height 1), plus l'ascendante.
+const asc = font.ascender / font.unitsPerEm, desc = -font.descender / font.unitsPerEm;
+const boxTop = logoH / 2 - F / 2 - 0.05 * F;
+const name = textPath(font, 'arthurbaros.xyz', { x: logoW + gap, y: boxTop + (F - (asc + desc) * F) / 2 + asc * F, size: F });
+
+const pad = 50;
+const mark = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(logoW + gap + name.width + 2 * pad)}" height="${Math.ceil(2 * logoH + 2 * pad)}">
+  <rect width="100%" height="100%" fill="${paper}"/>
+  <g transform="translate(${pad} ${pad})">
+    <svg width="${logoW}" height="${logoH}" viewBox="4 9 22 14">
+      <circle cx="11" cy="16" r="7" fill="${film}"/>
+      <rect x="19" y="9" width="7" height="14" rx="1" fill="${livre}"/>
+    </svg>
+    <path d="${name.d}" fill="${ink}"/>
   </g>
-  <text x="196" y="122" font-family="${serif}" font-size="40" font-weight="bold" fill="${ink}">arthurbaros.xyz</text>
-  <!-- Accroche -->
-  <text font-family="${serif}" font-size="76" font-weight="bold" fill="${ink}">
-    <tspan x="80" y="300">Mes avis sur les <tspan fill="${film}">films</tspan></tspan>
-    <tspan x="80" y="392">et les <tspan fill="${livre}">livres</tspan>.</tspan>
-  </text>
-  <line x1="80" y1="482" x2="1120" y2="482" stroke="${line}" stroke-width="2"/>
-  <text x="80" y="548" font-family="${serif}" font-size="36" font-style="italic" fill="${muted}">Notes, reviews et bilans par année</text>
-  <text x="1120" y="548" text-anchor="end" font-family="${serif}" font-size="36" fill="${film}">Lire les reviews →</text>
 </svg>`;
 
-await sharp(Buffer.from(svg)).png().toFile(new URL('../public/og.png', import.meta.url).pathname);
+// Recadré sur son contenu, ramené à 75 % de la largeur (marge contre le rognage des aperçus), puis centré.
+const trimmed = await sharp(Buffer.from(mark), { density: 288 }).trim({ background: paper }).toBuffer();
+const { data, info } = await sharp(trimmed).resize({ width: Math.round(width * 0.75) }).toBuffer({ resolveWithObject: true });
+const left = Math.round((width - info.width) / 2), top = Math.round((height - info.height) / 2);
+await sharp({ create: { width, height, channels: 4, background: paper } })
+  .composite([{ input: data, left, top }])
+  .png()
+  .toFile(fileURLToPath(new URL('../public/og.png', import.meta.url)));
 console.log('public/og.png généré');
