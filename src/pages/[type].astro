@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import EntryList from '../components/EntryList.astro';
-import { getJournal } from '../lib/content';
+import { getJournal, href } from '../lib/content';
 
 export function getStaticPaths() {
   return [
@@ -11,9 +11,42 @@ export function getStaticPaths() {
 }
 const { kind, title } = Astro.props;
 const entries = (await getJournal()).filter(({ work }) => work.data.type === kind);
+// Films vus : une seule fois chacun, du plus récemment vu au plus ancien (le journal est déjà trié).
+const films = [...new Map(entries.map(({ work }) => [work.id, work])).values()];
 ---
 <Base title={title}>
   <h1>{title}</h1>
-  <p class="meta">{entries.length} {entries.length > 1 ? 'entrées' : 'entrée'}</p>
-  <EntryList entries={entries} showType={false} />
+  {kind === 'film'
+    ? <>
+        <p class="meta">{films.length} {films.length > 1 ? 'films vus' : 'film vu'}</p>
+        <ul class="posters">
+          {films.map((work) => (
+            <li>
+              <a href={href(`/oeuvres/${work.id}/`)} title={`${work.data.title} (${work.data.year})`}>
+                {work.data.poster
+                  ? <img src={work.data.poster} alt={work.data.title} loading="lazy" />
+                  : <span class="placeholder">{work.data.title}</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    : <>
+        <p class="meta">{entries.length} {entries.length > 1 ? 'entrées' : 'entrée'}</p>
+        <EntryList entries={entries} showType={false} />
+      </>}
 </Base>
+
+<style>
+  .posters { list-style: none; padding: 0; margin: 1.5rem 0; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem; }
+  .posters a { display: block; aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden;
+    box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); transition: box-shadow 0.15s; }
+  .posters a:hover { box-shadow: 0 0 0 2px var(--film), 0 4px 12px rgb(0 0 0 / 0.2); }
+  .posters img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .placeholder { display: flex; align-items: center; justify-content: center; height: 100%; padding: 0.5rem;
+    text-align: center; font: 600 0.9rem var(--sans); color: var(--muted); background: color-mix(in srgb, var(--film) 10%, transparent); }
+  @media (max-width: 34rem) {
+    .posters { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+  }
+</style>

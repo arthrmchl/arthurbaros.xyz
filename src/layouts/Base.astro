@@ -70,7 +70,40 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
   .cover { float: right; width: 8rem; margin: 0 0 1rem 1.5rem; }
   .backdrop { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; margin: 0 0 1.5rem; }
   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
+
+  /* Mise en page commune aux fiches d'œuvre et aux reviews (à la Letterboxd). */
+  /* Image de fond large qui se fond dans la page (bas et côtés). */
+  body:has(.hero) { overflow-x: clip; }
+  .hero { width: min(100vw, 72rem); margin-left: calc(50% - min(50vw, 36rem)); }
+  /* Hauteur plafonnée pour que le texte reste visible sans défiler. */
+  .hero img { display: block; width: 100%; aspect-ratio: 21 / 9; max-height: min(22rem, 40vh); object-fit: cover; object-position: center 30%;
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent), linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, #000 55%, transparent), linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+    mask-composite: intersect; }
+  /* Affiche à gauche, informations à droite. */
+  .sheet { display: grid; grid-template-columns: 9rem 1fr; gap: 0 2rem; align-items: start; margin-top: 2.5rem; position: relative; }
+  .sheet.has-hero { margin-top: -5rem; }
+  .sheet:not(:has(.side)) { grid-template-columns: 1fr; }
+  .sheet .poster { display: block; width: 100%; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgb(0 0 0 / 0.25); }
+  .sheet .side .meta { margin: 0.75rem 0 0; text-align: center; }
+  /* Sur l'image de fond, le titre descend au niveau du bas de l'affiche. */
+  .sheet.has-hero .info { padding-top: 4rem; }
+  .sheet .prose > :first-child { margin-top: 0.75rem; }
+  .sheet h1 { margin: 0; }
+  .sheet header .meta { margin: 0.25rem 0 0; }
+  /* Titre et sous-titre sur la même ligne (passe à la ligne si trop long). */
+  .title-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.75rem; }
+  /* Informations secondaires sur une ligne, sous le texte. */
+  .details { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1.25rem; margin: 1.25rem 0 0;
+    padding-top: 1rem; border-top: 1px solid var(--line); }
+  .details > * { margin: 0; }
+  .stars { color: var(--film); letter-spacing: 0.08em; white-space: nowrap; }
+
   @media (max-width: 34rem) {
+    .sheet { grid-template-columns: 7rem 1fr; gap: 0 1.25rem; }
+    .sheet.has-hero { margin-top: -3rem; }
+    .sheet.has-hero .info { padding-top: 2.5rem; }
     .entries li { grid-template-columns: 1fr auto; }
     .entries .date, .entries .summary { grid-column: 1 / 3; }
   }

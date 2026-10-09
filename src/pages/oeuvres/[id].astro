@@ -2,7 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
-import { getJournal, typeLabel, fmtRuntime } from '../../lib/content';
+import { getJournal, typeLabel, fmtRuntime, href, fmtDate, fmtRating, fmtStars, venueLabel, verb } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -16,13 +16,67 @@ const { Content } = await render(work);
 const w = work.data;
 ---
 <Base title={w.title}>
-  {w.backdrop && <img class="backdrop" src={w.backdrop} alt="" />}
-  <h1>{w.title}</h1>
-  <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}{w.runtime && `, ${fmtRuntime(w.runtime)}`}</p>
-  {w.poster && <img class="cover" src={w.poster} alt={`Affiche : ${w.title}`} />}
-  {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
-  {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li>#{t}</li>)}</ul>}
-  <div class="prose"><Content /></div>
-  <h2>Mes passages</h2>
-  <EntryList entries={entries} showType={false} />
+  {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
+
+  <!-- Structure à la Letterboxd : affiche à gauche, informations à droite. -->
+  <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
+    {(w.poster || w.cover) && (
+      <aside class="side">
+        {w.poster && <img class="poster" src={w.poster} alt={`Affiche : ${w.title}`} />}
+        {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
+        {entries.length > 0 && <p class="meta">{verb[w.type]} {entries.length} fois</p>}
+      </aside>
+    )}
+
+    <div class="info">
+      {w.type === 'film'
+        ? <header class="title-line"><h1>{w.title}</h1> <span class="meta">{w.creator}&nbsp;– {w.year}</span></header>
+        : <header>
+            <h1>{w.title}</h1>
+            <p class="meta"><span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}</p>
+          </header>}
+      <div class="prose"><Content /></div>
+      {(w.runtime || w.tags.length > 0) && (
+        <div class="details">
+          {w.runtime && <p class="meta">Durée : {fmtRuntime(w.runtime)}</p>}
+          {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li>#{t}</li>)}</ul>}
+        </div>
+      )}
+    </div>
+  </article>
+
+  {w.type === 'film'
+    ? <>
+        <h2>Mes visionnages</h2>
+        <ul class="viewings">
+          {entries.map(({ log }) => (
+            <li>
+              <a class="date" href={href(`/journal/${log.id}/`)}>
+                <time datetime={log.data.date.toISOString().slice(0, 10)}>{fmtDate(log.data.date)}</time>
+              </a>
+              <span class="stars" aria-label={`Note : ${fmtRating(log.data.rating)}`} title={fmtRating(log.data.rating)}>
+                {log.data.rating > 0 ? fmtStars(log.data.rating) : '—'}
+              </span>
+              <span class="meta">{log.data.venue ? venueLabel[log.data.venue] : '—'}</span>
+              <span class="meta">{log.data.repeat ? 'Revisionnage' : 'Première fois'}</span>
+            </li>
+          ))}
+        </ul>
+      </>
+    : <>
+        <h2>Mes passages</h2>
+        <EntryList entries={entries} showType={false} />
+      </>}
 </Base>
+
+<style>
+  /* Visionnages : date, note, lieu, première fois. */
+  .viewings { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .viewings li { display: grid; grid-template-columns: 9rem 6rem 1fr auto; gap: 0.25rem 2.5rem; align-items: baseline;
+    padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
+  .viewings .date { font: 600 0.95rem var(--sans); }
+
+  @media (max-width: 34rem) {
+    .viewings li { grid-template-columns: 1fr auto; }
+  }
+</style>

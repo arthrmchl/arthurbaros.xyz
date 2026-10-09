@@ -1,7 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, fmtDate, fmtRating, typeLabel, verb } from '../../lib/content';
+import { getJournal, href, fmtDate, fmtRating, fmtStars, verb, venueLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -9,19 +9,56 @@ export async function getStaticPaths() {
 const { log, work } = Astro.props;
 const { Content } = await render(log);
 const w = work.data;
+const l = log.data;
+const isFilm = w.type === 'film';
+
+// Informations sur le passage, affichées sous le texte.
+const details = [
+  l.venue && ['Lieu', venueLabel[l.venue]],
+  ['Première fois', l.repeat ? 'Non' : 'Oui'],
+  l.accompanied !== undefined && ['Accompagné', l.accompanied ? 'Oui' : 'Non'],
+].filter(Boolean) as [string, string][];
 ---
-<Base title={w.title} description={log.data.summary}>
-  <article>
-    <h1>{w.title}</h1>
-    <p class="meta">
-      <span class={`kind-${w.type}`}>{typeLabel[w.type]}</span> de {w.creator}, {w.year}.
-      {verb[w.type]} le {fmtDate(log.data.date)}{log.data.repeat && ' (deuxième passage ou plus)'}.
-      Note : <span class="rating">{fmtRating(log.data.rating)}</span>
-    </p>
-    {w.poster && <img class="cover" src={w.poster} alt={`Affiche : ${w.title}`} />}
-    {w.cover && <img class="cover" src={w.cover} alt={`Couverture : ${w.title}`} />}
-    {log.data.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
-    <div class="prose"><Content /></div>
-    <p class="meta"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous mes passages</a></p>
+<Base title={w.title} description={l.summary || undefined}>
+  {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
+
+  <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->
+  <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
+    {(w.poster || w.cover) && (
+      <aside class="side">
+        <a href={href(`/oeuvres/${work.id}/`)}>
+          {w.poster && <img class="poster" src={w.poster} alt={`Affiche : ${w.title}`} />}
+          {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
+        </a>
+      </aside>
+    )}
+
+    <div class="info">
+      <header>
+        <div class="title-line">
+          <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{w.year}</span>
+        </div>
+        <p class="stars rating-big" aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
+          {l.rating > 0 ? fmtStars(l.rating) : '—'}
+        </p>
+        <p class="meta">{verb[w.type]} le {fmtDate(l.date)}</p>
+      </header>
+
+      {l.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
+      <div class="prose"><Content /></div>
+
+      <div class="details">
+        {details.map(([k, v]) => <p class="meta">{k} : {v}</p>)}
+      </div>
+
+      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous mes {isFilm ? 'visionnages' : 'passages'}</a></p>
+    </div>
   </article>
 </Base>
+
+<style>
+  h1 a { text-decoration: none; }
+  h1 a:hover { text-decoration: underline; }
+  .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
+  .back { margin: 1.5rem 0 0; }
+</style>

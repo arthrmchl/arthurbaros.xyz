@@ -42,6 +42,8 @@ const logs = defineCollection({
     rating: z.number().min(0).max(5).multipleOf(0.5),
     repeat: z.boolean().default(false),      // revisionnage / relecture
     spoilers: z.boolean().default(false),
+    venue: z.enum(['cinema', 'maison']).optional(), // lieu du visionnage (films)
+    accompanied: z.boolean().optional(),     // visionnage accompagné ou seul (films)
     summary: z.string().optional(),          // phrase d'accroche (listes, RSS)
   }),
 });

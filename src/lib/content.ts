@@ -6,6 +6,7 @@ export const href = (path: string) => `${base}${path}`;
 export const typeLabel = { film: 'Film', livre: 'Livre' } as const;
 export const typeRoute = { film: 'films', livre: 'livres' } as const;
 export const verb = { film: 'Vu', livre: 'Lu' } as const;
+export const venueLabel = { cinema: 'Au cinéma', maison: 'À la maison' } as const;
 
 export const fmtDate = (d: Date) =>
   d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -15,6 +16,8 @@ export const fmtRuntime = (min: number) => {
   return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
 };
 export const fmtRating = (n: number) => `${String(n).replace('.', ',')}/5`;
+/** 3.5 -> « ★★★½ » (à la Letterboxd) */
+export const fmtStars = (n: number) => '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '');
 
 /** Toutes les entrées de journal, reliées à leur fiche d'œuvre, de la plus récente à la plus ancienne. */
 export async function getJournal() {
