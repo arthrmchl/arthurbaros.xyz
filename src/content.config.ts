@@ -10,7 +10,8 @@ const works = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/works', generateId }),
   schema: z
     .object({
-      title: z.string(),
+      title: z.string(),                // titre français
+      originalTitle: z.preprocess((v) => v || undefined, z.string().optional()), // titre original, si différent
       type: z.enum(['film', 'livre']),
       creator: z.string().optional(),   // auteur (livres)
       director: z.string().optional(),  // réalisateur (films)
@@ -31,7 +32,12 @@ const works = defineCollection({
       }
     })
     // `creator` reste le champ commun lu par les pages : réalisateur pour un film, auteur pour un livre.
-    .transform((w) => ({ ...w, creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)! })),
+    // Un titre original identique au titre français n'est pas affiché.
+    .transform((w) => ({
+      ...w,
+      creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)!,
+      originalTitle: w.originalTitle !== w.title ? w.originalTitle : undefined,
+    })),
 });
 
 // Un champ laissé vide dans le frontmatter (`date:`) vaut null : on le traite comme absent.

@@ -1,5 +1,6 @@
 ---
-title: ""
+title: ""            # titre français
+originalTitle: ""    # titre original (à laisser vide s'il est identique)
 type: livre
 creator: ""           # auteur·ice(s), séparé·es par des virgules
 year:                 # année de publication

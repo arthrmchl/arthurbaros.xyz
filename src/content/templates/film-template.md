@@ -1,5 +1,6 @@
 ---
-title: ""
+title: ""            # titre français
+originalTitle: ""    # titre original (à laisser vide s'il est identique)
 type: film
 director: ""          # réalisateur·ice(s), séparé·es par des virgules
 year:                 # année de sortie

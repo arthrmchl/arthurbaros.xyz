@@ -94,12 +94,18 @@ const fullTitle = title ? `${title} · ${siteName}` : siteName;
   .sheet header .meta { margin: 0.25rem 0 0; }
   /* Titre et sous-titre sur la même ligne (passe à la ligne si trop long). */
   .title-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.75rem; }
+  .original-title { font-size: 1.15rem; font-style: italic; color: var(--muted); }
   /* Informations secondaires sur une ligne, sous le texte. */
   .details { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1.25rem; margin: 1.25rem 0 0;
     padding-top: 1rem; border-top: 1px solid var(--line); }
   .details > * { margin: 0; }
   .stars { color: var(--film); letter-spacing: 0.08em; white-space: nowrap; }
   .stars.is-livre { color: var(--livre); }
+
+  /* Sur grand écran, colonne plus large pour réduire les marges latérales. */
+  @media (min-width: 64rem) {
+    body { max-width: 64rem; }
+  }
 
   @media (max-width: 34rem) {
     .sheet { grid-template-columns: 7rem 1fr; gap: 0 1.25rem; }

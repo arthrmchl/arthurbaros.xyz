@@ -1,5 +1,6 @@
 ---
-title: "The Sign of Four"
+title: "Le Signe des quatre"
+originalTitle: "The Sign of Four"
 type: livre
 creator: "Sir Arthur Conan Doyle"
 year: 1890

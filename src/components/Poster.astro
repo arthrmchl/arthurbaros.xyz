@@ -7,7 +7,7 @@ const { work, badge, link = `/oeuvres/${work.id}/` } = Astro.props;
 const image = work.data.poster ?? work.data.cover;
 ---
 <li>
-  <a href={href(link)} title={`${work.data.title} (${work.data.year})`}>
+  <a href={href(link)} title={`${work.data.title}${work.data.originalTitle ? ` / ${work.data.originalTitle}` : ''} (${work.data.year})`}>
     {image
       ? <img src={image} alt={work.data.title} loading="lazy" />
       : <span class="placeholder">{work.data.title}</span>}

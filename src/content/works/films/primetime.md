@@ -1,5 +1,6 @@
 ---
 title: "Primetime"
+originalTitle: "Primetime"
 type: film
 director: "Lance Oppenheim"
 year: 2026

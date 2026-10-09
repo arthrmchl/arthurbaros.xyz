@@ -1,5 +1,6 @@
 ---
-title: "A Study in Scarlet"
+title: "Une étude en rouge"
+originalTitle: "A Study in Scarlet"
 type: livre
 creator: "Sir Arthur Conan Doyle"
 year: 1888

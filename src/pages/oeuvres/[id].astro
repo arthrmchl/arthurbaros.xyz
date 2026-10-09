@@ -30,7 +30,11 @@ const done = entries.filter(({ log }) => log.data.date).length;
     )}
 
     <div class="info">
-      <header class="title-line"><h1>{w.title}</h1> <span class="meta">{w.creator}&nbsp;– {w.year}</span></header>
+      <header class="title-line">
+        <h1>{w.title}</h1>
+        {w.originalTitle && <span class="original-title">{w.originalTitle}</span>}
+        <span class="meta">{w.creator}&nbsp;– {w.year}</span>
+      </header>
       <div class="prose"><Content /></div>
       {(w.runtime || w.originalLanguage || w.tags.length > 0) && (
         <div class="details">

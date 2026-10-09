@@ -19,8 +19,9 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
 
 1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (voir ci-dessous).
 
-   - **Film** : `title`, `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
-   - **Livre** : `title`, `type: livre`, `creator`, `year`, puis en option `originalLanguage` (langue originale), `cover` (couverture), `tags`.
+   - **Film** : `title` (titre français), `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
+   - **Livre** : `title` (titre français), `type: livre`, `creator`, `year`, puis en option `originalLanguage` (langue originale), `cover` (couverture), `tags`.
+   - `originalTitle` (titre original) : à remplir quand il diffère du titre français ; il s'affiche sous le titre.
    - `poster`, `backdrop` et `cover` acceptent une URL ou un chemin vers un fichier de `public/`.
 2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md` (modèles dans `templates/`), puis ton texte.
 
