@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, excerpt, shareImage, fmtRuntime, href, fmtDate, fmtRating, fmtStars, fmtRange, capitalize, venueLabel, versionLabel, verb, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, excerpt, shareImage, fmtRuntime, href, fmtDate, fmtRating, fmtStars, fmtRange, capitalize, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -13,8 +13,6 @@ export async function getStaticPaths() {
 const { work, entries } = Astro.props;
 const { Content } = await render(work);
 const w = work.data;
-// Lectures en cours exclues du compteur « Lu N fois ».
-const done = entries.filter(({ log }) => log.data.date).length;
 const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} (${w.year}) : fiche et ${w.type === 'film' ? 'visionnages' : 'lectures'}.`;
 ---
 <Base title={`${w.title} (${w.year}), ${w.creator}`} description={description}
@@ -27,7 +25,6 @@ const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} 
       <aside class="side">
         {w.poster && <img class="poster" src={w.poster} alt={`Affiche : ${w.title}`} />}
         {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
-        {done > 0 && <p class="meta">{verb[w.type]} {done} fois</p>}
       </aside>
     )}
 

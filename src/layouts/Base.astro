@@ -134,7 +134,6 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .sheet.has-hero { margin-top: -5rem; }
   .sheet:not(:has(.side)) { grid-template-columns: 1fr; }
   .sheet .poster { display: block; width: 100%; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgb(0 0 0 / 0.25); }
-  .sheet .side .meta { margin: 0.75rem 0 0; text-align: center; }
   /* Sur l'image de fond, le titre descend au niveau du bas de l'affiche. */
   .sheet.has-hero .info { padding-top: 4rem; }
   .sheet .prose > :first-child { margin-top: 0.75rem; }
