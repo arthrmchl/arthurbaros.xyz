@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { href } from '../lib/content';
 ---
-<Base title="À propos" description="Regarder un film pour en ajouter trois dans la watchlist. Pareil pour les livres."
+<Base title="À propos" description="Je laisse mes émotions et mes ressentis me guider."
   image="/arthur.jpg" imageAlt="Arthur enfant, casquette sur la tête, buvant une brique de jus sur un banc">
   <header class="intro">
     <img class="portrait" src={href('/arthur.jpg')} alt="Arthur enfant, casquette sur la tête, buvant une brique de jus sur un banc" width="480" height="480" />
@@ -12,8 +12,8 @@ import { href } from '../lib/content';
     </div>
   </header>
   <div class="about">
-    <p class="lead">Regarder un film pour en ajouter trois dans la watchlist. Pareil pour les livres.</p>
-    <p class="ethos">Je laisse mes émotions et mes ressentis me guider.</p>
+    <p class="lead">Je laisse mes émotions et mes ressentis me guider.</p>
+    <p class="text">Ici, je partage mes avis, analyses et autres critiques sur les œuvres que je regarde, lis ou écoute. Mon objectif est de garder une trace des marques qu’elles laissent dans mon esprit. Rechercher les informations pour remplir les fiches des différentes réalisations me permet également de m’intéresser un peu plus à chacune d’entre elles et de ne pas être dans une bête consommation de contenus.</p>
   </div>
 </Base>
 
@@ -27,5 +27,5 @@ import { href } from '../lib/content';
 
   .about { padding-top: 2rem; border-top: 1px solid var(--line); }
   .lead { margin: 0; font-size: clamp(1.4rem, 4.5vw, 1.75rem); line-height: 1.35; text-wrap: balance; }
-  .ethos { margin: 1.25rem 0 0; font-style: italic; color: var(--muted); }
+  .text { margin: 1.5rem 0 0; line-height: 1.6; }
 </style>
