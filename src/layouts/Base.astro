@@ -158,7 +158,11 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   @media (max-width: 34rem) {
     .sheet { grid-template-columns: 7rem 1fr; gap: 0 1.25rem; }
     .sheet.has-hero { margin-top: -3rem; }
-    .sheet.has-hero .info { padding-top: 2.5rem; }
+    /* Seul l'en-tête reste à côté de l'affiche ; le texte et la suite prennent toute la largeur. */
+    .sheet .info { display: contents; }
+    .sheet .info > :not(header) { grid-column: 1 / -1; }
+    .sheet .prose > :first-child { margin-top: 1.25rem; }
+    .sheet.has-hero .info > header { padding-top: 2.5rem; }
     .entries li { grid-template-columns: 1fr auto; }
     .entries .date, .entries .summary { grid-column: 1 / 3; }
   }
