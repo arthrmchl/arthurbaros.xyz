@@ -63,6 +63,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
       <nav aria-label="Navigation principale">
         <a href={href('/films/')}>Films</a>
         <a href={href('/livres/')}>Livres</a>
+        <a href={href('/series/')}>Séries</a>
         <a href={href('/a-propos/')}>À propos</a>
       </nav>
     </header>
@@ -76,11 +77,11 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
 <style is:global>
   :root {
     --paper: #eef1ec; --ink: #17232b; --muted: #55646e; --line: #c9d1cb;
-    --film: #1d5c78; --livre: #66661c;
+    --film: #1d5c78; --livre: #66661c; --serie: #8a3d36;
     --serif: 'Newsreader', Georgia, serif; --sans: 'Instrument Sans', system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --paper: #12191e; --ink: #e6ebe7; --muted: #94a3ad; --line: #2b3841; --film: #7cc0dd; --livre: #c6c66a; }
+    :root { --paper: #12191e; --ink: #e6ebe7; --muted: #94a3ad; --line: #2b3841; --film: #7cc0dd; --livre: #c6c66a; --serie: #e39a8f; }
   }
   * { box-sizing: border-box; }
   html { background: var(--paper); color: var(--ink); }
@@ -100,7 +101,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .site-header nav { display: flex; gap: 1.25rem; font-size: 0.95rem; }
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
   .meta { font: 0.9rem/1.4 var(--sans); color: var(--muted); }
-  .kind-film { color: var(--film); } .kind-livre { color: var(--livre); }
+  .kind-film { color: var(--film); } .kind-livre { color: var(--livre); } .kind-serie { color: var(--serie); }
   .notice { font: 0.95rem var(--sans); padding: 0.6rem 0.9rem; border-left: 3px solid var(--livre); background: color-mix(in srgb, var(--livre) 10%, transparent); }
   .prose img { max-width: 100%; height: auto; }
   .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
@@ -110,6 +111,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .pill { padding: 0.1rem 0.6rem; border-radius: 999px; font: 600 0.8rem/1.6 var(--sans);
     color: var(--film); background: color-mix(in srgb, var(--film) 14%, transparent); }
   .pill.is-livre { color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
+  .pill.is-serie { color: var(--serie); background: color-mix(in srgb, var(--serie) 14%, transparent); }
   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
 
   /* Mise en page commune aux fiches d'œuvre et aux reviews (à la Letterboxd). */
@@ -141,6 +143,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .details > * { margin: 0; }
   .stars { color: var(--film); letter-spacing: 0.08em; white-space: nowrap; }
   .stars.is-livre { color: var(--livre); }
+  .stars.is-serie { color: var(--serie); }
 
   /* Sur grand écran, colonne plus large pour réduire les marges latérales. */
   @media (min-width: 64rem) {

@@ -1,4 +1,4 @@
-# Journal de bord — reviews de films et de livres
+# Journal de bord — reviews de films, de livres et de séries
 
 Blog statique Astro : tu écris des fichiers Markdown, GitHub Pages publie le site.
 
@@ -6,10 +6,11 @@ Blog statique Astro : tu écris des fichiers Markdown, GitHub Pages publie le si
 
 ```
 src/content/
-├── works/            # fiches d'œuvres (une par film ou livre)
+├── works/            # fiches d'œuvres (une par film, livre ou série)
 │   ├── films/parasite.md
-│   └── livres/la-horde-du-contrevent.md
-└── logs/             # un fichier par visionnage ou lecture
+│   ├── livres/la-horde-du-contrevent.md
+│   └── series/severance.md
+└── logs/             # un fichier par visionnage, lecture ou saison suivie
     └── 2026-10-03-parasite.md   # work: parasite
 ```
 
@@ -17,19 +18,22 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
 
 ## Ajouter une review
 
-1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/` ou `works/livres/` (voir ci-dessous).
+1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/`, `works/livres/` ou `works/series/` (voir ci-dessous).
 
    - **Film** : `title` (titre français), `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
    - **Livre** : `title` (titre français), `type: livre`, `creator`, `year`, puis en option `originalLanguage` (langue originale), `cover` (couverture), `tags`.
+   - **Série** : `title`, `type: serie`, `creator`, `firstAired` (début de diffusion), puis en option `lastAired` (fin de diffusion, vide si la série est toujours diffusée), `poster`, `backdrop`, `tags`, et `seasons` : pour chaque saison, `firstAired`, `lastAired` et `episodes`, soit le nombre d'épisodes (`episodes: 10`), soit la liste de leurs titres. Une saison peut aussi avoir un `title` et un `poster`.
    - `originalTitle` (titre original) : à remplir quand il diffère du titre français ; il s'affiche sous le titre.
    - `poster`, `backdrop` et `cover` acceptent une URL ou un chemin vers un fichier de `public/`.
 2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md` (modèles dans `templates/`), puis ton texte.
 
    - **Visionnage** : `work`, `date`, `rating` (0 à 5, par pas de 0,5), puis en option `venue` (`cinema` ou `maison`), `version` (`vf` ou `vostfr`), `accompanied`, `repeat`.
    - **Lecture** : `work`, `started` (début), `language`, puis `date` (fin) et `rating` une fois le livre terminé : sans `date`, la lecture s'affiche « en cours ».
+   - **Saison** : `work`, `season` (son numéro) et `watched`, la liste des jours de visionnage avec les épisodes vus ce jour-là (`3`, `[1, 2]` ou `"4-7"`). Tu complètes le même fichier au fil des épisodes. La saison est « en cours » jusqu'à ce que tous ses épisodes soient vus. Ajoute alors `rating` et ton texte. Une `date` donnée avant la fin marque la saison comme abandonnée. En option : `version`, `accompanied`, `repeat`.
+   - **Avis sur toute la série** : `work`, `date`, `rating` (optionnelle), sans `season`.
 3. `git add . && git commit -m "Review : ..." && git push`
 
-## Livres à lire (et films à voir)
+## Livres à lire (et films ou séries à voir)
 
 Une fiche d'œuvre sans aucun fichier dans `logs/` est considérée comme « à lire » (ou « à voir ») : il suffit de créer la fiche dans `works/livres/` à partir de `templates/livre-template.md`. Elle apparaît dans la section **À lire** de la page Livres, et quitte cette liste dès que tu crées l'entrée de lecture correspondante (avec `started`).
 

@@ -14,16 +14,24 @@ export async function getStaticPaths() {
 const { year, entries } = Astro.props;
 const films = entries.filter((e) => e.work.data.type === 'film').length;
 const livres = entries.filter((e) => e.work.data.type === 'livre').length;
+// Saisons de séries terminées (ou en cours) dans l'année ; les avis sur une série entière ne comptent pas.
+const series = entries.filter((e) => e.season).length;
+const counts = [
+  `${films} ${films > 1 ? 'films' : 'film'}`,
+  `${livres} ${livres > 1 ? 'livres' : 'livre'}`,
+  series && `${series} ${series > 1 ? 'saisons' : 'saison'} de série`,
+].filter(Boolean) as string[];
+const countText = counts.length > 2 ? `${counts.slice(0, -1).join(', ')} et ${counts.at(-1)}` : counts.join(' et ');
 // Moyenne sur les entrées notées seulement (une lecture en cours n'a pas encore de note).
 const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
 const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
-const description = `Bilan ${year} : ${films} ${films > 1 ? 'films' : 'film'} et ${livres} ${livres > 1 ? 'livres' : 'livre'}`
+const description = `Bilan ${year} : ${countText}`
   + (ratings.length > 0 ? `, note moyenne ${avg.toFixed(1).replace('.', ',')}/5.` : '.');
 ---
 <Base title={`Bilan ${year} : reviews et critiques de l’année`} description={description}>
   <h1>{year}</h1>
   <p class="meta">
-    {films} {films > 1 ? 'films' : 'film'}, {livres} {livres > 1 ? 'livres' : 'livre'}.
+    {countText}.
     {ratings.length > 0 && <>Note moyenne : {avg.toFixed(1).replace('.', ',')}/5.</>}
   </p>
   <EntryList entries={entries} />

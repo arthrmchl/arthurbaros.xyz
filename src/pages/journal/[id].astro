@@ -1,37 +1,47 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, excerpt, shareImage, fmtDate, fmtRange, fmtRating, fmtStars, inProgress, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, href, excerpt, shareImage, fmtDate, fmtShortDate, fmtRange, fmtRating, fmtStars, fmtYears, inProgress, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
 }
-const { log, work } = Astro.props;
+const { log, work, season } = Astro.props;
 const { Content } = await render(log);
 const w = work.data;
 const l = log.data;
 const isFilm = w.type === 'film';
+const isLivre = w.type === 'livre';
 const ongoing = inProgress(l);
+const years = fmtYears(w);
+const poster = season?.poster ?? w.poster;
 
-// Quand : « Vu le … » pour un film ; pour un livre, début et fin de lecture (la fin peut manquer).
+// Quand : « Vu le … » pour un film ; pour un livre ou une saison, début et fin (la fin peut manquer).
 const when =
-  l.started && l.date ? `Lu ${fmtRange(l.started, l.date)}`
+  season && l.started && l.date ? `Vue ${l.started.getTime() === l.date.getTime() ? `le ${fmtDate(l.date)}` : fmtRange(l.started, l.date)}`
+  : season && l.started ? `Commencée le ${fmtDate(l.started)}`
+  : season ? `Arrêtée le ${fmtDate(l.date!)}`
+  : l.started && l.date ? `Lu ${fmtRange(l.started, l.date)}`
   : l.started ? `Commencé le ${fmtDate(l.started)}`
+  : w.type === 'serie' ? `Avis du ${fmtDate(l.date!)}`
   : `${verb[w.type]} le ${fmtDate(l.date!)}`;
+// Saison arrêtée avant la fin : une `date` est donnée sans que tous les épisodes aient été vus.
+const stopped = season && l.date && !season.complete;
 
 // Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.
-const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${w.year}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
+const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${years}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
 
 // Titre de l'aperçu : « Review de Titre (année) · ★★★½ », sans note pour une lecture en cours.
 const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
-const shareTitle = `Review de ${w.title} (${w.year})${stars ? ` · ${stars}` : ''}`;
+const shareTitle = `Review de ${w.title}${season ? `, saison ${season.number}` : ''} (${years})${stars ? ` · ${stars}` : ''}`;
 
 // Informations sur le passage, affichées en pastilles sous le texte.
-const pills = (isFilm
+const pills = (!isLivre
   ? [
       l.venue && venueLabel[l.venue],
       l.version && versionLabel[l.version],
       l.repeat ? 'revisionnage' : 'premier visionnage',
+      stopped && 'abandonnée',
       l.accompanied !== undefined && (l.accompanied ? 'accompagné' : 'seul'),
     ]
   : [
@@ -40,16 +50,16 @@ const pills = (isFilm
     ]
 ).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
-<Base title={`Review de ${w.title} (${w.year}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
-  image={shareImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image du film ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+<Base title={`Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
+  image={shareImage(w.backdrop) ?? poster ?? w.cover} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
 
   <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->
   <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
-    {(w.poster || w.cover) && (
+    {(poster || w.cover) && (
       <aside class="side">
         <a href={href(`/oeuvres/${work.id}/`)}>
-          {w.poster && <img class="poster" src={w.poster} alt={`Affiche : ${w.title}`} />}
+          {poster && <img class="poster" src={poster} alt={`Affiche : ${w.title}${season ? `, saison ${season.number}` : ''}`} />}
           {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
         </a>
       </aside>
@@ -58,25 +68,42 @@ const pills = (isFilm
     <div class="info">
       <header>
         <div class="title-line">
-          <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{w.year}</span>
+          <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{years}</span>
         </div>
+        {season && <p class="season">{seasonLabel(season)}</p>}
         {!isFilm && <p class="meta">de {w.creator}</p>}
         {l.rating !== undefined
-          ? <p class:list={['stars rating-big', { 'is-livre': !isFilm }]} aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
+          ? <p class={`stars rating-big is-${w.type}`} aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
               {l.rating > 0 ? fmtStars(l.rating) : '—'}
             </p>
-          : ongoing && <p class="ongoing">Lecture en cours</p>}
+          : ongoing && <p class="ongoing">{season ? `Saison en cours · ${season.seen.size}/${season.episodes} épisodes` : 'Lecture en cours'}</p>}
         <p class="meta">{when}</p>
       </header>
 
       {l.spoilers && <p class="notice">Cet avis dévoile des éléments de l'intrigue.</p>}
       <div class="prose"><Content /></div>
 
+      {season && l.watched.length > 0 && (
+        <section class="watched">
+          <h2>Épisodes vus <span class="meta">{season.seen.size}/{season.episodes}</span></h2>
+          <ul>
+            {l.watched.map(({ date, episodes }) => (
+              <li>
+                <time class="meta" datetime={date.toISOString().slice(0, 10)}>{fmtShortDate(date)}</time>
+                <ol>
+                  {episodes.map((n) => <li><span class="num">{n}</span>{season.titles[n - 1] ?? `Épisode ${n}`}</li>)}
+                </ol>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div class="details pills">
-        {pills.map((v) => <span class:list={['pill', { 'is-livre': !isFilm }]}>{v}</span>)}
+        {pills.map((v) => <span class={`pill is-${w.type}`}>{v}</span>)}
       </div>
 
-      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous {isFilm ? 'mes visionnages' : 'mes lectures'}</a></p>
+      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous {isLivre ? 'mes lectures' : 'mes visionnages'}</a></p>
     </div>
   </article>
 </Base>
@@ -85,8 +112,18 @@ const pills = (isFilm
   h1 a { text-decoration: none; }
   h1 a:hover { text-decoration: underline; }
   .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
-  .ongoing { display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
-    font: 600 0.8rem/1.6 var(--sans); color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
+  .season { margin: 0.2rem 0 0; font: 600 1rem var(--sans); color: var(--serie); }
+  .ongoing { --accent: var(--livre); display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
+    font: 600 0.8rem/1.6 var(--sans); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .season ~ .ongoing { --accent: var(--serie); }
+  /* Épisodes vus, jour par jour : la date à gauche, les épisodes en liste à droite. */
+  .watched { margin-top: 1.5rem; }
+  .watched h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+  .watched ul, .watched ol { list-style: none; padding: 0; margin: 0; }
+  .watched > ul > li { display: grid; grid-template-columns: 4.5rem 1fr; gap: 0 1rem; padding: 0.4rem 0; border-top: 1px solid var(--line); }
+  .watched time { line-height: 1.6; }
+  .watched ol { font: 0.95rem/1.6 var(--sans); }
+  .watched .num { display: inline-block; min-width: 1.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .pills { gap: 0.5rem; }
   .back { margin: 1.5rem 0 0; }
 </style>

@@ -3,32 +3,38 @@ import Base from '../layouts/Base.astro';
 import Poster from '../components/Poster.astro';
 import RepeatIcon from '../components/RepeatIcon.astro';
 import ReviewIcon from '../components/ReviewIcon.astro';
-import { getJournal, href, logDate, fmtDate, fmtShortDate, fmtStars, inProgress } from '../lib/content';
+import { getJournal, href, logDate, fmtDate, fmtShortDate, fmtStars, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
 
 const journal = await getJournal();
 const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
 
-// Lectures en cours : la plus récente entrée de chaque livre, si elle n'a pas de date de fin.
+// Lectures et saisons en cours : la plus récente entrée de chaque livre ou série, si elle n'a pas de date de fin.
 const seen = new Set<string>();
 const reading = journal
-  .filter(({ work }) => work.data.type === 'livre' && !seen.has(work.id) && seen.add(work.id))
+  .filter(({ work }) => work.data.type !== 'film' && !seen.has(work.id) && seen.add(work.id))
   .filter(({ log }) => inProgress(log.data));
-// Derniers passages terminés, une rangée par type.
-const recent = (kind: 'film' | 'livre') =>
+// Derniers passages terminés, une rangée par type. Les séries, plus rares, n'ont leur rangée qu'une fois la première vue.
+const recent = (kind: 'film' | 'livre' | 'serie') =>
   journal.filter(({ log, work }) => work.data.type === kind && !inProgress(log.data)).slice(0, 5);
-const shelves = [
+const shelves = ([
   { kind: 'film', title: 'Derniers films vus', all: 'Tous les films', route: '/films/', entries: recent('film') },
   { kind: 'livre', title: 'Derniers livres lus', all: 'Tous les livres', route: '/livres/', entries: recent('livre') },
-] as const;
+  { kind: 'serie', title: 'Dernières séries vues', all: 'Toutes les séries', route: '/series/', entries: recent('serie') },
+] as const).filter(({ kind, entries }) => kind !== 'serie' || entries.length);
 ---
 <Base>
-  {reading.map(({ log, work }) => (
-    <a class="reading" href={href(`/journal/${log.id}/`)}>
-      {work.data.cover && <img src={work.data.cover} alt="" />}
+  {reading.map(({ log, work, season }) => (
+    <a class="reading" href={href(`/journal/${log.id}/`)} style={`--accent: var(--${work.data.type})`}>
+      {(season?.poster ?? work.data.poster ?? work.data.cover) && <img src={season?.poster ?? work.data.poster ?? work.data.cover} alt="" />}
       <div>
-        <p class="meta">En train de lire · depuis le {fmtDate(log.data.started!)}</p>
+        <p class="meta">
+          {season ? 'En train de regarder' : 'En train de lire'}
+          {log.data.started && <> · depuis le {fmtDate(log.data.started)}</>}
+        </p>
         <p class="title">{work.data.title}</p>
-        <p class="meta">{work.data.creator}, {work.data.year}</p>
+        {season
+          ? <p class="meta">{seasonLabel(season)} · {season.seen.size}/{season.episodes} épisodes</p>
+          : <p class="meta">{work.data.creator}, {fmtYears(work.data)}</p>}
         {log.data.summary && <p class="summary">{log.data.summary}</p>}
       </div>
     </a>
@@ -42,13 +48,13 @@ const shelves = [
       </div>
       {entries.length
         ? <ul class="posters" style={`--accent: var(--${kind})`}>
-            {entries.map(({ log, work }) => (
-              <Poster work={work} link={`/journal/${log.id}/`}>
+            {entries.map(({ log, work, season }) => (
+              <Poster work={work} link={`/journal/${log.id}/`} image={season?.poster}>
                 <span class="rated">
-                  <span class:list={['stars', { 'is-livre': kind === 'livre' }]}>{fmtStars(log.data.rating!)}</span>
-                  {log.data.repeat && <RepeatIcon label={kind === 'film' ? 'Revisionnage' : 'Relecture'} />}
+                  {log.data.rating !== undefined && <span class={`stars is-${kind}`}>{fmtStars(log.data.rating)}</span>}
+                  {log.data.repeat && <RepeatIcon label={repeatLabel[kind]} />}
                   {log.body?.trim() && <ReviewIcon />}
-                </span>{fmtShortDate(log.data.date!)}
+                </span>{season && <>S{season.number} · </>}{fmtShortDate(log.data.date!)}
               </Poster>
             ))}
           </ul>
@@ -65,11 +71,11 @@ const shelves = [
 <style>
   /* Lecture en cours : grande couverture et fond teinté. */
   .reading { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1.25rem; align-items: center; margin: 2rem 0 0;
-    padding: 1rem; border-radius: 6px; text-decoration: none; background: color-mix(in srgb, var(--livre) 12%, transparent); }
+    padding: 1rem; border-radius: 6px; text-decoration: none; background: color-mix(in srgb, var(--accent) 12%, transparent); }
   .reading:hover .title { text-decoration: underline; }
   .reading img { display: block; width: 100%; height: auto; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); }
   .reading p { margin: 0; }
-  .reading .meta:first-child { color: var(--livre); font-weight: 600; }
+  .reading .meta:first-child { color: var(--accent); font-weight: 600; }
   .reading .title { font-size: 1.5rem; font-weight: 600; line-height: 1.2; margin: 0.3rem 0 0.2rem; }
   .reading .summary { margin-top: 0.5rem; font-size: 1rem; color: var(--muted); }
   .shelf-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
