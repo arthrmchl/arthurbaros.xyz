@@ -1,21 +1,84 @@
 ---
-import { href, fmtDate, fmtRating, typeLabel, logDate } from '../lib/content';
+import RepeatIcon from './RepeatIcon.astro';
+import ReviewIcon from './ReviewIcon.astro';
+import { href, fmtRating, fmtStars, typeLabel, logDate } from '../lib/content';
 const { entries, showType = true } = Astro.props;
+
+// Journal à la Letterboxd : le mois n'est affiché qu'à la première entrée de chaque mois.
+const sameYear = new Set(entries.map(({ log }) => logDate(log.data).getUTCFullYear())).size <= 1;
+const monthOf = (d: Date) =>
+  d.toLocaleDateString('fr-FR', { month: 'short', ...(sameYear ? {} : { year: 'numeric' }), timeZone: 'UTC' });
+const rows = entries.map((e, i) => {
+  const d = logDate(e.log.data);
+  const prev = i > 0 ? monthOf(logDate(entries[i - 1].log.data)) : undefined;
+  return { ...e, d, month: monthOf(d) !== prev ? monthOf(d) : undefined };
+});
 ---
 <ul class="entries">
-  {entries.map(({ log, work }) => (
-    <li>
-      <time class="date" datetime={logDate(log.data).toISOString().slice(0, 10)}>{fmtDate(logDate(log.data))}</time>
-      <div>
-        <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
-        <span class="meta">
-          {work.data.creator}, {work.data.year}
-          {showType && <> — <span class={`kind-${work.data.type}`}>{typeLabel[work.data.type]}</span></>}
-          {log.data.repeat && ' — revu'}
-        </span>
-      </div>
-      <span class="rating">{log.data.rating !== undefined ? fmtRating(log.data.rating) : log.data.date ? '—' : 'En cours'}</span>
-      {log.data.summary && <p class="summary">{log.data.summary}</p>}
-    </li>
-  ))}
+  {rows.map(({ log, work, d, month }) => {
+    const image = work.data.poster ?? work.data.cover;
+    const isLivre = work.data.type === 'livre';
+    return (
+      <li>
+        <time class="date" datetime={d.toISOString().slice(0, 10)}>
+          <span class="month">{month}</span>
+          <span class="day">{d.getUTCDate()}</span>
+        </time>
+        <a class="thumb" href={href(`/journal/${log.id}/`)} tabindex="-1" aria-hidden="true">
+          {image ? <img src={image} alt="" loading="lazy" /> : <span class="placeholder" />}
+        </a>
+        <div class="body">
+          <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
+          <span class="meta">
+            {work.data.creator}<span class="inline-year">, {work.data.year}</span>
+            {showType && <> — <span class={`kind-${work.data.type}`}>{typeLabel[work.data.type]}</span></>}
+          </span>
+          {log.data.summary && <p class="summary">{log.data.summary}</p>}
+        </div>
+        <span class="year meta">{work.data.year}</span>
+        {log.data.rating !== undefined
+          ? <span class:list={['stars', { 'is-livre': isLivre }]} aria-label={`Note : ${fmtRating(log.data.rating)}`} title={fmtRating(log.data.rating)}>
+              {log.data.rating > 0 ? fmtStars(log.data.rating) : '—'}
+            </span>
+          : <span class="stars pending">{log.data.date ? '—' : 'En cours'}</span>}
+        <span class="repeat">{log.data.repeat && <RepeatIcon label={isLivre ? 'Relecture' : 'Revisionnage'} />}</span>
+        <span class="review">{log.body?.trim() && <ReviewIcon />}</span>
+      </li>
+    );
+  })}
 </ul>
+
+<style>
+  .entries { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .entries li { display: grid; grid-template-columns: 3rem 2.75rem 1fr 3.5rem 6.5rem 1.25rem 1.25rem; gap: 0 1.25rem; align-items: center;
+    padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  /* Jour en grand, mois en étiquette au-dessus. */
+  .date { display: flex; flex-direction: column; align-items: center; font-family: var(--sans); line-height: 1; }
+  .month { font: 600 0.7rem var(--sans); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .month:empty { display: none; }
+  .day { font-size: 1.6rem; font-weight: 300; color: var(--muted); }
+  .thumb { display: block; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 2px 6px rgb(0 0 0 / 0.2); }
+  .thumb img { display: block; width: 100%; height: auto; }
+  .placeholder { display: block; aspect-ratio: 2 / 3; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .body { display: flex; flex-direction: column; min-width: 0; }
+  .name { font-size: 1.25rem; font-weight: 600; line-height: 1.25; text-decoration: none; }
+  .name:hover { text-decoration: underline; }
+  .summary { margin: 0.25rem 0 0; color: var(--muted); font-size: 1rem; line-height: 1.4; }
+  .year { text-align: right; }
+  .stars { font-size: 1.05rem; }
+  /* Lecture en cours : à la place des étoiles. */
+  .pending { font: 600 0.9rem var(--sans); letter-spacing: 0; color: var(--ink); }
+  .repeat, .review { display: flex; justify-content: center; }
+  .inline-year { display: none; }
+
+  /* Sur téléphone : l'année passe sous le titre, note et revisionnage sous le texte. */
+  @media (max-width: 34rem) {
+    .entries li { grid-template-columns: 2.25rem 2.5rem 1fr auto auto; grid-template-areas: 'date thumb body body body' 'date thumb stars repeat review';
+      gap: 0.15rem 0.9rem; align-items: start; }
+    .date { grid-area: date; } .thumb { grid-area: thumb; } .body { grid-area: body; }
+    .stars { grid-area: stars; } .repeat { grid-area: repeat; } .review { grid-area: review; }
+    .year { display: none; } .inline-year { display: inline; }
+    .day { font-size: 1.35rem; }
+    .name { font-size: 1.1rem; }
+  }
+</style>

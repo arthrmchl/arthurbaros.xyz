@@ -101,13 +101,6 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
   .meta { font: 0.9rem/1.4 var(--sans); color: var(--muted); }
   .kind-film { color: var(--film); } .kind-livre { color: var(--livre); }
-  .entries { list-style: none; padding: 0; margin: 1.5rem 0; }
-  .entries li { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: 0.25rem 1.25rem; align-items: baseline;
-    padding: 0.9rem 0; border-bottom: 1px solid var(--line); }
-  .entries .date { font: 0.9rem var(--sans); color: var(--muted); }
-  .entries .name { font-weight: 600; }
-  .entries .summary { grid-column: 2 / 4; margin: 0; color: var(--muted); font-size: 1rem; }
-  .rating { font: 600 0.95rem var(--sans); white-space: nowrap; }
   .notice { font: 0.95rem var(--sans); padding: 0.6rem 0.9rem; border-left: 3px solid var(--livre); background: color-mix(in srgb, var(--livre) 10%, transparent); }
   .prose img { max-width: 100%; height: auto; }
   .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
@@ -162,7 +155,5 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     .sheet .info > :not(header) { grid-column: 1 / -1; }
     .sheet .prose > :first-child { margin-top: 1.25rem; }
     .sheet.has-hero .info > header { padding-top: 2.5rem; }
-    .entries li { grid-template-columns: 1fr auto; }
-    .entries .date, .entries .summary { grid-column: 1 / 3; }
   }
 </style>

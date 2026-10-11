@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import Poster from '../components/Poster.astro';
+import RepeatIcon from '../components/RepeatIcon.astro';
+import ReviewIcon from '../components/ReviewIcon.astro';
 import { getJournal, href, logDate, fmtDate, fmtShortDate, fmtStars, inProgress } from '../lib/content';
 
 const journal = await getJournal();
@@ -42,8 +44,11 @@ const shelves = [
         ? <ul class="posters" style={`--accent: var(--${kind})`}>
             {entries.map(({ log, work }) => (
               <Poster work={work} link={`/journal/${log.id}/`}>
-                <span class:list={['stars', { 'is-livre': kind === 'livre' }]}>{fmtStars(log.data.rating!)}</span>
-                <br />{fmtShortDate(log.data.date!)}{log.data.repeat && (kind === 'film' ? ' · revu' : ' · relu')}
+                <span class="rated">
+                  <span class:list={['stars', { 'is-livre': kind === 'livre' }]}>{fmtStars(log.data.rating!)}</span>
+                  {log.data.repeat && <RepeatIcon label={kind === 'film' ? 'Revisionnage' : 'Relecture'} />}
+                  {log.body?.trim() && <ReviewIcon />}
+                </span>{fmtShortDate(log.data.date!)}
               </Poster>
             ))}
           </ul>
@@ -73,6 +78,9 @@ const shelves = [
   /* Une rangée de 5 ; les images s'alignent par le bas au-dessus des légendes. */
   .posters { list-style: none; padding: 0; margin: 1rem 0 0; display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; align-items: end; }
+  /* Étoiles puis icônes de revisionnage et de review sur une même ligne, comme sous les affiches de Letterboxd. */
+  .rated { display: flex; align-items: center; gap: 0.35rem; }
+  .rated :global(.repeat-icon), .rated :global(.review-icon) { width: 0.95rem; height: 0.95rem; }
   section + p.meta { margin-top: 2.5rem; }
   @media (max-width: 34rem) {
     .reading { grid-template-columns: 5rem 1fr; gap: 1rem; }
