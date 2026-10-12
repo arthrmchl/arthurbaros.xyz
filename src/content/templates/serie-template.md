@@ -9,10 +9,12 @@ poster: ""
 backdrop: ""
 tags: []
 seasons:
-  - firstAired:      # début de diffusion de la saison
+  - title: ""        # nom de la saison (optionnel, à laisser vide sinon)
+    firstAired:      # début de diffusion de la saison
     lastAired:       # fin de diffusion de la saison
     episodes: 10     # nombre d'épisodes…
-  - firstAired:
+  - title: ""
+    firstAired:
     lastAired:
     episodes:        # …ou la liste de leurs titres
       - ""

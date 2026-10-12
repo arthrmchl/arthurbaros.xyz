@@ -30,8 +30,7 @@ const rows = entries.map((e, i) => {
         <div class="body">
           <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
           <span class="meta">
-            {season && <>{seasonLabel(season)} · </>}
-            {work.data.creator}<span class="inline-year">, {fmtYears(work.data)}</span>
+            {season && <>{seasonLabel(season)}<span class="sep">·</span></>}{work.data.creator}<span class="inline-year">, {fmtYears(work.data)}</span>
             {showType && <> — <span class={`kind-${work.data.type}`}>{typeLabel[work.data.type]}</span></>}
           </span>
           {log.data.summary && <p class="summary">{log.data.summary}</p>}

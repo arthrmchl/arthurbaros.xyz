@@ -54,7 +54,7 @@ const shelves = ([
                   {log.data.rating !== undefined && <span class={`stars is-${kind}`}>{fmtStars(log.data.rating)}</span>}
                   {log.data.repeat && <RepeatIcon label={repeatLabel[kind]} />}
                   {log.body?.trim() && <ReviewIcon />}
-                </span>{season && <>S{season.number} · </>}{fmtShortDate(log.data.date!)}
+                </span>{season && <>S{season.number}<span class="sep">·</span></>}{fmtShortDate(log.data.date!)}
               </Poster>
             ))}
           </ul>
@@ -79,7 +79,6 @@ const shelves = ([
   .reading p { margin: 0; }
   .reading .meta:first-child { color: var(--accent); font-weight: 600; }
   .reading .title { font-size: 1.5rem; font-weight: 600; line-height: 1.2; margin: 0.3rem 0 0.2rem; }
-  .reading .sep { margin: 0 0.4em; }
   .reading .summary { margin-top: 0.5rem; font-size: 1rem; color: var(--muted); }
   .shelf-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
   .shelf-head a { text-decoration: none; }

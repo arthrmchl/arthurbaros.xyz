@@ -12,7 +12,7 @@ seasons:
   - firstAired: 1990-04-08
     lastAired: 1990-05-23
     episodes:
-      - "Northwest Passage"
+      - "Pilot"
       - "Traces to Nowhere"
       - "Zen, or the Skill to Catch a Killer"
       - "Rest in Pain"

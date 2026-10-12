@@ -28,13 +28,13 @@ const done = works.length - reading;
 const noun = { film: ['film', 'films'], livre: ['livre', 'livres'], serie: ['série', 'séries'] }[kind];
 const plural = (n: number) => noun[n > 1 ? 1 : 0];
 const participle = { film: ['vu', 'vus'], livre: ['lu', 'lus'], serie: ['vue', 'vues'] }[kind];
-const count = [done && `${done} ${plural(done)} ${participle[done > 1 ? 1 : 0]}`, reading && `${reading} en cours`]
-  .filter(Boolean).join(' · ') || `0 ${noun[0]} ${participle[0]}`;
+const counts = [done && `${done} ${plural(done)} ${participle[done > 1 ? 1 : 0]}`, reading && `${reading} en cours`].filter(Boolean);
+const count = counts.join(' · ') || `0 ${noun[0]} ${participle[0]}`;
 const intro = { film: 'Les films que j’ai vus', livre: 'Les livres que j’ai lus', serie: 'Les séries que j’ai regardées' }[kind];
 ---
 <Base title={title} description={`${intro}, avec mes notes et mes avis : ${count}.`}>
   <h1>{title}</h1>
-  <p class="meta">{count}</p>
+  <p class="meta">{counts.length ? counts.map((c, i) => <>{i > 0 && <span class="sep">·</span>}{c}</>) : count}</p>
   <ul class="posters" style={`--accent: var(--${kind})`}>
     {works.map(({ work, reading }) => <Poster work={work} badge={reading ? 'En cours' : undefined} />)}
   </ul>

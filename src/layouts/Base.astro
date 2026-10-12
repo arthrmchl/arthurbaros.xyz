@@ -141,6 +141,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .details { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; margin: 1.25rem 0 0;
     padding-top: 1rem; border-top: 1px solid var(--line); }
   .details > * { margin: 0; }
+  /* Point médian entre deux infos : les espaces de la police sans empattement sont trop étroits. */
+  .sep { margin: 0 0.4em; }
   .stars { color: var(--film); letter-spacing: 0.08em; white-space: nowrap; }
   .stars.is-livre { color: var(--livre); }
   .stars.is-serie { color: var(--serie); }

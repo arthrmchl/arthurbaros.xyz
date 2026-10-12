@@ -53,7 +53,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
       {(w.runtime || released || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
         <div class="details">
           {w.runtime && <p class="meta">{fmtRuntime(w.runtime)}</p>}
-          {w.seasons.length > 0 && <p class="meta">{w.seasons.length} {w.seasons.length > 1 ? 'saisons' : 'saison'} · {episodeCount} {episodeCount > 1 ? 'épisodes' : 'épisode'}</p>}
+          {w.seasons.length > 0 && <p class="meta">{w.seasons.length} {w.seasons.length > 1 ? 'saisons' : 'saison'}<span class="sep">·</span>{episodeCount} {episodeCount > 1 ? 'épisodes' : 'épisode'}</p>}
           {w.firstAired && <p class="meta">{fmtAired(w)}</p>}
           {released && <p class="meta">{released}</p>}
           {w.originalLanguage && <p class="meta">Langue originale : {capitalize(w.originalLanguage)}</p>}
@@ -80,7 +80,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
                 : <span />}
             </summary>
             <div class="season-body">
-              {s.poster && <img class="season-poster" src={s.poster} alt={`Affiche : ${w.title}, saison ${s.number}`} loading="lazy" />}
+              {s.poster && <img class="season-poster" src={s.poster} alt={`Affiche : ${w.title}, ${seasonLabel(s).toLowerCase()}`} loading="lazy" />}
               <div>
                 {s.aired && <p class="meta">{s.aired}</p>}
                 <ol class="episodes">
@@ -108,7 +108,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
                           ? <span class="stars is-serie" aria-label={`Note : ${fmtRating(log.data.rating)}`} title={fmtRating(log.data.rating)}>
                               {log.data.rating > 0 ? fmtStars(log.data.rating) : '—'}
                             </span>
-                          : <span class="meta">{!log.data.date ? `En cours · ${season!.seen.size}/${season!.episodes}` : season!.complete ? '—' : 'Abandonnée'}</span>}
+                          : <span class="meta">{!log.data.date ? <>En cours<span class="sep">·</span>{season!.seen.size}/{season!.episodes}</> : season!.complete ? '—' : 'Abandonnée'}</span>}
                         <span class="meta extra">{log.data.version ? versionLabel[log.data.version] : '—'}</span>
                         <span class="repeat">{log.data.repeat && <RepeatIcon label="Revisionnage" />}</span>
                         <span class="review">{log.body?.trim() && <ReviewIcon />}</span>

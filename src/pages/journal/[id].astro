@@ -33,7 +33,7 @@ const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.tit
 
 // Titre de l'aperçu : « Review de Titre (année) · ★★★½ », sans note pour une lecture en cours.
 const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
-const shareTitle = `Review de ${w.title}${season ? `, saison ${season.number}` : ''} (${years})${stars ? ` · ${stars}` : ''}`;
+const shareTitle = `Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years})${stars ? ` · ${stars}` : ''}`;
 
 // Informations sur le passage, affichées en pastilles sous le texte.
 const pills = (!isLivre
@@ -59,7 +59,7 @@ const pills = (!isLivre
     {(poster || w.cover) && (
       <aside class="side">
         <a href={href(`/oeuvres/${work.id}/`)}>
-          {poster && <img class="poster" src={poster} alt={`Affiche : ${w.title}${season ? `, saison ${season.number}` : ''}`} />}
+          {poster && <img class="poster" src={poster} alt={`Affiche : ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''}`} />}
           {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
         </a>
       </aside>
@@ -76,7 +76,7 @@ const pills = (!isLivre
           ? <p class={`stars rating-big is-${w.type}`} aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
               {l.rating > 0 ? fmtStars(l.rating) : '—'}
             </p>
-          : ongoing && <p class="ongoing">{season ? `Saison en cours · ${season.seen.size}/${season.episodes} épisodes` : 'Lecture en cours'}</p>}
+          : ongoing && <p class="ongoing">{season ? <>Saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}</p>}
         <p class="meta">{when}</p>
       </header>
 
