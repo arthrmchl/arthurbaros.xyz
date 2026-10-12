@@ -36,6 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: withastro/action@v3
+        with:
+          # La valeur par défaut de l'action (Node 20) n'a pas Object.groupBy.
+          node-version: 22
   deploy:
     needs: build
     runs-on: ubuntu-latest
