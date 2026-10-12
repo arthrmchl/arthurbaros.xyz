@@ -1,7 +1,7 @@
 ---
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
-import { href, fmtRating, fmtStars, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
+import { href, posterImage, fmtRating, fmtStars, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
 const { entries, showType = true } = Astro.props;
 
 // Journal à la Letterboxd : le mois n'est affiché qu'à la première entrée de chaque mois.
@@ -25,7 +25,7 @@ const rows = entries.map((e, i) => {
           <span class="day">{d.getUTCDate()}</span>
         </time>
         <a class="thumb" href={href(`/journal/${log.id}/`)} tabindex="-1" aria-hidden="true">
-          {image ? <img src={image} alt="" loading="lazy" /> : <span class="placeholder" />}
+          {image ? <img {...posterImage(image, '2.75rem')} alt="" loading="lazy" /> : <span class="placeholder" />}
         </a>
         <div class="body">
           <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
@@ -60,7 +60,7 @@ const rows = entries.map((e, i) => {
   .month:empty { display: none; }
   .day { font-size: 1.6rem; font-weight: 300; color: var(--muted); }
   .thumb { display: block; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 2px 6px rgb(0 0 0 / 0.2); }
-  .thumb img { display: block; width: 100%; height: auto; }
+  .thumb img { display: block; width: 100%; height: auto; aspect-ratio: auto 2 / 3; }
   .placeholder { display: block; aspect-ratio: 2 / 3; background: color-mix(in srgb, var(--ink) 8%, transparent); }
   .body { display: flex; flex-direction: column; min-width: 0; }
   .name { font-size: 1.25rem; font-weight: 600; line-height: 1.25; text-decoration: none; }

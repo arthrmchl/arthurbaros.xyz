@@ -144,5 +144,15 @@ export const excerpt = (markdown = '', max = 200) => {
   return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:.–-]+$/, '')}…`;
 };
 
-/** Image adaptée au partage de liens : les backdrops TMDB « original » sont trop lourds, on prend la version 1280 px. */
-export const shareImage = (url?: string) => url?.replace('/t/p/original/', '/t/p/w1280/');
+/** Une image TMDB dans une autre taille (`w185`, `w1280`…) ; les autres URL restent telles quelles. */
+export const tmdb = (url: string, size: string) => url.replace(/^(https:\/\/image\.tmdb\.org\/t\/p\/)[^/]+\//, `$1${size}/`);
+/** Image de fond : la version « original » de TMDB est trop lourde, 1280 px suffisent (page et partage de liens). */
+export const backdropImage = (url?: string) => url && tmdb(url, 'w1280');
+/**
+ * Attributs d'une affiche ou couverture : pour une image TMDB, plusieurs tailles au choix du navigateur
+ * selon `sizes`, la largeur affichée (ex. « 9rem »).
+ */
+export const posterImage = (url: string, sizes: string) =>
+  url.startsWith('https://image.tmdb.org/')
+    ? { src: tmdb(url, 'w500'), srcset: ['w185', 'w342', 'w500'].map((s) => `${tmdb(url, s)} ${s.slice(1)}w`).join(', '), sizes }
+    : { src: url };

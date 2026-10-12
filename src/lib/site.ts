@@ -1,7 +1,7 @@
 // Informations du site, reprises dans les meta-tags de chaque page et dans le flux RSS.
 export const site = {
   name: 'arthurbaros.xyz',
-  description: 'Reviews et critiques de films et de livres.',
+  description: 'Reviews et critiques de films, de livres, de séries et autres œuvres culturelles.',
   // Complète le nom dans le titre de l'accueil.
   tagline: 'Reviews et critiques',
   author: 'Arthur Baros',

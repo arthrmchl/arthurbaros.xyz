@@ -1,6 +1,6 @@
 // Génère l'image de partage par défaut (public/og.png, 1200×630) : logo et nom du site, centrés,
 // avec la même mise en page que le header du site (.brand dans src/layouts/Base.astro).
-// À relancer après un changement de nom ou de couleurs : node scripts/og-image.mjs
+// À relancer après un changement de nom ou de couleurs : npm run og-image
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { loadFont, textPath } from './font-path.mjs';

@@ -3,7 +3,7 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import RepeatIcon from '../../components/RepeatIcon.astro';
 import ReviewIcon from '../../components/ReviewIcon.astro';
-import { getJournal, excerpt, shareImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtRating, fmtStars, fmtRange, fmtYears, capitalize, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtRating, fmtStars, fmtRange, fmtYears, capitalize, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -31,15 +31,15 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
 const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
 ---
 <Base title={`${w.title} (${years}), ${w.creator}`} description={description}
-  image={shareImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
-  {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
+  image={backdropImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Structure à la Letterboxd : affiche à gauche, informations à droite. -->
   <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
     {(w.poster || w.cover) && (
       <aside class="side">
-        {w.poster && <img class="poster" src={w.poster} alt={`Affiche : ${w.title}`} />}
-        {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
+        {w.poster && <img class="poster" {...posterImage(w.poster, '9rem')} alt={`Affiche : ${w.title}`} />}
+        {w.cover && <img class="poster" {...posterImage(w.cover, '9rem')} alt={`Couverture : ${w.title}`} />}
       </aside>
     )}
 
@@ -80,7 +80,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
                 : <span />}
             </summary>
             <div class="season-body">
-              {s.poster && <img class="season-poster" src={s.poster} alt={`Affiche : ${w.title}, ${seasonLabel(s).toLowerCase()}`} loading="lazy" />}
+              {s.poster && <img class="season-poster" {...posterImage(s.poster, '6rem')} alt={`Affiche : ${w.title}, ${seasonLabel(s).toLowerCase()}`} loading="lazy" />}
               <div>
                 {s.aired && <p class="meta">{s.aired}</p>}
                 <ol class="episodes">
@@ -217,7 +217,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
   .season-body { display: grid; grid-template-columns: 6rem 1fr; gap: 1.5rem; padding: 0 0 1.25rem 1.1rem; }
   .season-body:not(:has(.season-poster)) { grid-template-columns: 1fr; }
   .season-body > div > .meta:first-child { margin: 0 0 0.5rem; }
-  .season-poster { display: block; width: 100%; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); }
+  .season-poster { display: block; width: 100%; height: auto; aspect-ratio: auto 2 / 3; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgb(0 0 0 / 0.2); }
   /* Épisodes : numéro, titre, date du dernier visionnage ; les épisodes pas encore vus sont estompés. */
   .episodes { list-style: none; padding: 0; margin: 0; font: 0.95rem/1.5 var(--sans); }
   .episodes li { display: grid; grid-template-columns: 1.75rem 1fr auto; gap: 0 0.75rem; padding: 0.2rem 0; color: var(--muted); }

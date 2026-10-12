@@ -1,7 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, excerpt, shareImage, fmtDate, fmtShortDate, fmtRange, fmtRating, fmtStars, fmtYears, inProgress, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, href, excerpt, backdropImage, posterImage, fmtDate, fmtShortDate, fmtRange, fmtRating, fmtStars, fmtYears, inProgress, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -51,16 +51,16 @@ const pills = (!isLivre
 ).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
 <Base title={`Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
-  image={shareImage(w.backdrop) ?? poster ?? w.cover} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
-  {w.backdrop && <div class="hero"><img src={w.backdrop} alt="" /></div>}
+  image={backdropImage(w.backdrop) ?? poster ?? w.cover} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->
   <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
     {(poster || w.cover) && (
       <aside class="side">
         <a href={href(`/oeuvres/${work.id}/`)}>
-          {poster && <img class="poster" src={poster} alt={`Affiche : ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''}`} />}
-          {w.cover && <img class="poster" src={w.cover} alt={`Couverture : ${w.title}`} />}
+          {poster && <img class="poster" {...posterImage(poster, '9rem')} alt={`Affiche : ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''}`} />}
+          {w.cover && <img class="poster" {...posterImage(w.cover, '9rem')} alt={`Couverture : ${w.title}`} />}
         </a>
       </aside>
     )}

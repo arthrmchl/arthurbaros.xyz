@@ -100,6 +100,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .brand span { position: relative; top: -0.05em; }
   .site-header nav { display: flex; gap: 1.25rem; font-size: 0.95rem; }
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
+  /* Lu par les lecteurs d'écran et les moteurs de recherche, invisible à l'écran. */
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .meta { font: 0.9rem/1.4 var(--sans); color: var(--muted); }
   .kind-film { color: var(--film); } .kind-livre { color: var(--livre); } .kind-serie { color: var(--serie); }
   .notice { font: 0.95rem var(--sans); padding: 0.6rem 0.9rem; border-left: 3px solid var(--livre); background: color-mix(in srgb, var(--livre) 10%, transparent); }
@@ -128,7 +130,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .sheet { display: grid; grid-template-columns: 9rem 1fr; gap: 0 2rem; align-items: start; margin-top: 2.5rem; position: relative; }
   .sheet.has-hero { margin-top: -5rem; }
   .sheet:not(:has(.side)) { grid-template-columns: 1fr; }
-  .sheet .poster { display: block; width: 100%; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgb(0 0 0 / 0.25); }
+  .sheet .poster { display: block; width: 100%; height: auto; aspect-ratio: auto 2 / 3; border-radius: 4px; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgb(0 0 0 / 0.25); }
   /* Sur l'image de fond, le titre descend au niveau du bas de l'affiche. */
   .sheet.has-hero .info { padding-top: 4rem; }
   .sheet .prose > :first-child { margin-top: 0.75rem; }
