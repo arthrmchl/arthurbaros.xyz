@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, abandonedLabel, imageLabel, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -34,7 +34,7 @@ const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.tit
 
 // Titre de l'aperçu : « Review de Titre (année) · ★★★☆☆ », sans note pour une lecture en cours.
 const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
-const shareTitle = `Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years})${stars ? ` · ${stars}` : ''}`;
+const shareTitle = `Review de ${w.title}${seasonSuffix(season)} (${years})${stars ? ` · ${stars}` : ''}`;
 
 // Informations sur le passage, affichées en pastilles sous le texte.
 const pills = (!isLivre
@@ -52,7 +52,7 @@ const pills = (!isLivre
     ]
 ).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
-<Base title={`Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
+<Base title={`Review de ${w.title}${seasonSuffix(season)} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
   noindex={!hasText(log)} jsonLd={reviewSchema(log, work, season, Astro.site!)}
   image={backdropImage(w.backdrop) ?? poster} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
@@ -62,7 +62,7 @@ const pills = (!isLivre
     {poster && (
       <aside class="side">
         <a href={href(`/oeuvres/${work.id}/`)}>
-          <img class="poster" {...posterImage(poster, '9rem')} alt={`${imageLabel(w.type)} : ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''}`} />
+          <img class="poster" {...posterImage(poster, '9rem')} alt={`${imageLabel(w.type)} : ${w.title}${seasonSuffix(season)}`} />
         </a>
       </aside>
     )}
@@ -72,7 +72,7 @@ const pills = (!isLivre
         <div class="title-line">
           <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{years}</span>
         </div>
-        {season && <p class="season">{seasonLabel(season)}</p>}
+        {season && seasonLabel(season) && <p class="season">{seasonLabel(season)}</p>}
         {!isFilm && <p class="meta">de <People names={w.creators} /></p>}
         {l.rating !== undefined
           ? <p class="rating-big"><Stars rating={l.rating} type={w.type} /></p>

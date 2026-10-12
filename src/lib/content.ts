@@ -77,8 +77,17 @@ export const fmtReleased = (w: { type: string; released?: { year: number; month?
   const verb = w.type === 'livre' ? 'Publié' : 'Sorti';
   return r.day ? `${verb} le ${fmtDate(d)}` : `${verb} en ${d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
 };
-/** « Saison 2 », ou « Saison 2 : Le titre » si la saison a un nom. */
-export const seasonLabel = (s: { number: number; title?: string }) => `Saison ${s.number}${s.title ? ` : ${s.title}` : ''}`;
+/**
+ * « Saison 2 », ou « Saison 2 : Le titre » si la saison a un nom.
+ * Seule saison de la série : pas de numéro, seulement son nom si elle en a un (sinon rien).
+ */
+export const seasonLabel = (s: { number: number; title?: string; only: boolean }) =>
+  s.only ? s.title : `Saison ${s.number}${s.title ? ` : ${s.title}` : ''}`;
+/** Suite d'un titre d'œuvre : « , saison 2 », « , saison 2 : Le titre », ou rien pour la seule saison d'une série sans nom. */
+export const seasonSuffix = (s?: { number: number; title?: string; only: boolean }) => {
+  const label = s && seasonLabel(s);
+  return label ? `, ${label.replace(/^Saison/, 'saison')}` : '';
+};
 /** [1, 2, 3, 5] -> « épisodes 1 à 3 et 5 » */
 export const fmtEpisodes = (list: number[]) => {
   const nums = [...new Set(list)].sort((a, b) => a - b);
@@ -177,14 +186,14 @@ const warned = new Set<string>();
  * Simple avertissement, une seule fois par entrée : le premier passage peut dater d'avant le journal.
  * Les avis sur une série entière ne comptent pas.
  */
-function warnMissingRepeats(journal: { log: { id: string; data: { repeat: boolean } }; work: CollectionEntry<'works'>; season?: { number: number; title?: string } }[]) {
+function warnMissingRepeats(journal: { log: { id: string; data: { repeat: boolean } }; work: CollectionEntry<'works'>; season?: Season }[]) {
   const seen = new Set<string>();
   for (const { log, work, season } of journal.toReversed()) {
     if (work.data.type === 'serie' && !season) continue;
     const key = `${work.id}/${season?.number ?? ''}`;
     if (seen.has(key) && !log.data.repeat && !warned.has(log.id)) {
       warned.add(log.id);
-      console.warn(`⚠ logs/${log.id} : ${work.data.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} a déjà une entrée plus ancienne. Revisionnage ou relecture ? Ajoute \`repeat: true\`.`);
+      console.warn(`⚠ logs/${log.id} : ${work.data.title}${seasonSuffix(season)} a déjà une entrée plus ancienne. Revisionnage ou relecture ? Ajoute \`repeat: true\`.`);
     }
     seen.add(key);
   }

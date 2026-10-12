@@ -5,7 +5,7 @@ import Stars from '../../components/Stars.astro';
 import ViewingRow from '../../components/ViewingRow.astro';
 import People from '../../components/People.astro';
 import { workPageSchema } from '../../lib/schema';
-import { getJournal, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, abandonedLabel, imageLabel, slugify, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, abandonedLabel, imageLabel, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -54,7 +54,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
       {(w.runtime || released || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
         <div class="details">
           {w.runtime && <p class="meta">{fmtRuntime(w.runtime)}</p>}
-          {w.seasons.length > 0 && <p class="meta">{w.seasons.length} {w.seasons.length > 1 ? 'saisons' : 'saison'}<span class="sep">·</span>{episodeCount} {episodeCount > 1 ? 'épisodes' : 'épisode'}</p>}
+          {w.seasons.length > 0 && <p class="meta">{w.seasons.length > 1 && <>{w.seasons.length} saisons<span class="sep">·</span></>}{episodeCount} {episodeCount > 1 ? 'épisodes' : 'épisode'}</p>}
           {w.firstAired && <p class="meta">{fmtAired(w)}</p>}
           {released && <p class="meta">{released}</p>}
           {w.originalLanguage && <p class="meta">Langue originale : {capitalize(w.originalLanguage)}</p>}
@@ -67,21 +67,15 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
   {w.type === 'serie' && (
     <>
       {entries.length === 0 && <p class="notice">Pas encore commencée : dans ma liste <a href={href('/series/')}>à voir</a>.</p>}
-      {seasons.length > 0 && <h2>Saisons</h2>}
+      {seasons.length > 1 && <h2>Saisons</h2>}
       {seasons.map((s) => {
         const last = s.logs.find((e) => e.log.data.rating !== undefined)?.log.data.rating;
-        return (
-          <details class="season" open={s.ongoing || seasons.length === 1}>
-            <summary>
-              <span class="season-name">{seasonLabel(s)}</span>
-              <span class="meta">{s.firstAired?.getUTCFullYear()}</span>
-              <span class="meta progress">{s.seen.size > 0 ? `${s.seen.size}/${s.episodes}` : `${s.episodes} ép.`}</span>
-              {last !== undefined ? <Stars rating={last} type="serie" /> : <span />}
-            </summary>
+        // Seule saison de la série : directement la liste des épisodes, sans « Saison 1 » repliable.
+        const body = (
             <div class="season-body">
-              {s.poster && <img class="season-poster" {...posterImage(s.poster, '6rem')} alt={`Affiche : ${w.title}, ${seasonLabel(s).toLowerCase()}`} loading="lazy" />}
+              {s.poster && <img class="season-poster" {...posterImage(s.poster, '6rem')} alt={`Affiche : ${w.title}${seasonSuffix(s)}`} loading="lazy" />}
               <div>
-                {s.aired && <p class="meta">{s.aired}</p>}
+                {s.aired && !s.only && <p class="meta">{s.aired}</p>}
                 <ol class="episodes">
                   {Array.from({ length: s.episodes }, (_, i) => i + 1).map((n) => (
                     <li class:list={{ seen: s.seen.has(n) }}>
@@ -104,8 +98,21 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
                 )}
               </div>
             </div>
-          </details>
         );
+        return s.only
+          ? <section class="season only">
+              <h2>{s.title || 'Épisodes'}{s.seen.size > 0 && <> <span class="meta">{s.seen.size}/{s.episodes}</span></>}</h2>
+              {body}
+            </section>
+          : <details class="season" open={s.ongoing}>
+              <summary>
+                <span class="season-name">{seasonLabel(s)}</span>
+                <span class="meta">{s.firstAired?.getUTCFullYear()}</span>
+                <span class="meta progress">{s.seen.size > 0 ? `${s.seen.size}/${s.episodes}` : `${s.episodes} ép.`}</span>
+                {last !== undefined ? <Stars rating={last} type="serie" /> : <span />}
+              </summary>
+              {body}
+            </details>;
       })}
       {seriesReviews.length > 0 && (
         <>
@@ -177,6 +184,9 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
   .episodes .num { font-variant-numeric: tabular-nums; color: var(--muted); }
   .episodes li.seen .num { color: var(--serie); font-weight: 600; }
   .season .viewings { margin: 1rem 0 0; }
+  /* Seule saison : pas de ligne de titre repliable, la liste suit le titre de section. */
+  .season.only { border: none; }
+  .season.only .season-body { padding-left: 0; }
 
   /* Cinq colonnes ne tiennent pas sur un écran étroit. */
   @media (max-width: 48rem) {

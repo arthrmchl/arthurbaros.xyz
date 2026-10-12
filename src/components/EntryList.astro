@@ -25,6 +25,8 @@ const rows = entries.map((e) => {
   {rows.map(({ log, work, season, d, precision, month, day }) => {
     const image = season?.poster ?? work.data.poster;
     const type = work.data.type;
+    // Série : « Titre · Saison 2 », sans la saison quand la série n'en a qu'une.
+    const seasonName = season && seasonLabel(season);
     return (
       <li>
         <time class="date" datetime={isoDate(d, precision)}>
@@ -35,9 +37,9 @@ const rows = entries.map((e) => {
           {image ? <img {...posterImage(image, '2.75rem')} alt="" loading="lazy" /> : <span class="placeholder" />}
         </a>
         <div class="body">
-          <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}</a>
+          <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}{seasonName && <><span class="sep">·</span>{seasonName}</>}</a>
           <span class="meta">
-            {season && <>{seasonLabel(season)}<span class="sep">·</span></>}{work.data.creator}<span class="inline-year">, {fmtYears(work.data)}</span>
+            {work.data.creator}<span class="inline-year">, {fmtYears(work.data)}</span>
             {showType && <> — <span class={`kind-${work.data.type}`}>{typeLabel[work.data.type]}</span></>}
           </span>
           {log.data.summary && <p class="summary">{log.data.summary}</p>}

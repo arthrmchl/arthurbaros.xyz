@@ -51,7 +51,7 @@ export function reviewSchema(log: Log, work: Work, season: Season | undefined, o
     author: { '@type': 'Person', name: site.author, url: absolute('/a-propos/', origin) },
     datePublished: l.date ? isoDate(l.date, l.datePrecision) : day(l.started!),
     itemReviewed: season
-      ? { '@type': 'TVSeason', name: season.title ?? `Saison ${season.number}`, seasonNumber: season.number, numberOfEpisodes: season.episodes, partOfSeries: item }
+      ? { '@type': 'TVSeason', name: season.title || `Saison ${season.number}`, seasonNumber: season.number, numberOfEpisodes: season.episodes, partOfSeries: item }
       : item,
     reviewRating: { '@type': 'Rating', ratingValue: l.rating, bestRating: 5, worstRating: 0 },
     ...(body ? { reviewBody: body } : {}),

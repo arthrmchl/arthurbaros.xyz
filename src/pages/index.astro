@@ -33,7 +33,7 @@ const shelves = ([
         </p>
         <p class="title">{work.data.title}</p>
         {season
-          ? <p class="meta">{seasonLabel(season)}<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</p>
+          ? <p class="meta">{seasonLabel(season) && <>{seasonLabel(season)}<span class="sep">·</span></>}{season.seen.size}/{season.episodes} épisodes</p>
           : <p class="meta">{work.data.creator}, {fmtYears(work.data)}</p>}
         {log.data.summary && <p class="summary">{log.data.summary}</p>}
       </div>
@@ -54,7 +54,7 @@ const shelves = ([
                   {log.data.rating !== undefined && <Stars rating={log.data.rating} type={kind} />}
                   {log.data.repeat && <RepeatIcon label={repeatLabel[kind]} />}
                   {log.body?.trim() && <ReviewIcon />}
-                </span>{season && <>S{season.number}<span class="sep">·</span></>}{fmtShortDate(log.data.date!, log.data.datePrecision)}
+                </span>{season && !season.only && <>S{season.number}<span class="sep">·</span></>}{fmtShortDate(log.data.date!, log.data.datePrecision)}
               </Poster>
             ))}
           </ul>

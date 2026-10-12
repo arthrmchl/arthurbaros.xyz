@@ -103,12 +103,13 @@ const works = defineCollection({
     // `creator` : les noms à la suite, pour les affichages en texte (« Mark Frost, David Lynch »).
     // Un titre original identique au titre français n'est pas affiché.
     // `year` (année de sortie, de publication ou de début de diffusion) sert aux affichages courts.
+    // `only` : seule saison de la série, dont le numéro n'est alors jamais affiché.
     .transform((w) => ({
       ...w,
       creator: w.creators.join(', '),
       originalTitle: w.originalTitle !== w.title ? w.originalTitle : undefined,
       year: (w.released?.year ?? w.firstAired?.getUTCFullYear())!,
-      seasons: w.seasons.map((s, i) => ({ ...s, number: s.number ?? i + 1 })),
+      seasons: w.seasons.map((s, i) => ({ ...s, number: s.number ?? i + 1, only: w.seasons.length === 1 })),
     })),
 });
 
