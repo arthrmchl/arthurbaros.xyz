@@ -2,7 +2,7 @@
 title: "La Horde du Contrevent"
 type: livre
 creator: "Alain Damasio"
-year: 2004
+released: 2004
 originalLanguage: "français"
 cover: "https://cdn.cultura.com/cdn-cgi/image/width=830/media/pim/TITELIVE/56_9782072927515_1_75.jpg"
 tags: [science-fiction, fantaisie]

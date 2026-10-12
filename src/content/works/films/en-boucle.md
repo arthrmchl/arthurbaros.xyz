@@ -3,7 +3,7 @@ title: "En boucle"
 originalTitle: "リバー、流れないでよ"
 type: film
 director: "Junta Yamaguchi"
-year: 2023
+released: 2023
 runtime: 86
 poster: "https://image.tmdb.org/t/p/w500/w29O9Th6hfNs42d3ERoWgbQEBBe.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/1mbpam7co02lkmf2pjSB8Qlo9sV.jpg"

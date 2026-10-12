@@ -3,7 +3,7 @@ title: "L'Œuf de l'ange"
 originalTitle: "天使のたまご"
 type: film
 director: "Mamoru Oshii"
-year: 1985
+released: 1985
 runtime: 71
 poster: "https://image.tmdb.org/t/p/w500/dqi68LqT8z4lduMg0xR2TZHkRId.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/shkJlQbMVg14skEwKRox47AfTwL.jpg"

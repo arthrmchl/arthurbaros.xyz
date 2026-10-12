@@ -3,7 +3,7 @@ title: ""
 originalTitle: ""
 type: film
 director: ""
-year: 
+released: 
 runtime: 
 poster: ""
 backdrop: ""

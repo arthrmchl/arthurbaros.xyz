@@ -20,9 +20,10 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
 
 1. Si l'œuvre n'a pas de fiche, crée-la dans `works/films/`, `works/livres/` ou `works/series/` (voir ci-dessous).
 
-   - **Film** : `title` (titre français), `type: film`, `director`, `year`, puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
-   - **Livre** : `title` (titre français), `type: livre`, `creator`, `year`, puis en option `originalLanguage` (langue originale), `cover` (couverture), `tags`.
+   - **Film** : `title` (titre français), `type: film`, `director`, `released` (sortie), puis en option `runtime` (durée en minutes), `poster` (affiche), `backdrop` (image de fond), `tags`.
+   - **Livre** : `title` (titre français), `type: livre`, `creator`, `released` (publication), puis en option `originalLanguage` (langue originale), `cover` (couverture), `tags`.
    - **Série** : `title`, `type: serie`, `creator`, `firstAired` (début de diffusion), puis en option `lastAired` (fin de diffusion, vide si la série est toujours diffusée), `poster`, `backdrop`, `tags`, et `seasons` : pour chaque saison, `firstAired`, `lastAired` et `episodes`, soit le nombre d'épisodes (`episodes: 10`), soit la liste de leurs titres. Une saison peut aussi avoir un `title` et un `poster`.
+   - `released` accepte une année (`2026`), un mois (`2026-10`) ou un jour (`2026-10-08`) ; la date précise s'affiche sur la fiche, l'année seule ailleurs.
    - `originalTitle` (titre original) : à remplir quand il diffère du titre français ; il s'affiche sous le titre.
    - `poster`, `backdrop` et `cover` acceptent une URL ou un chemin vers un fichier de `public/`.
 2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md` (modèles dans `templates/`), puis ton texte.

@@ -3,7 +3,7 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import RepeatIcon from '../../components/RepeatIcon.astro';
 import ReviewIcon from '../../components/ReviewIcon.astro';
-import { getJournal, excerpt, shareImage, fmtRuntime, href, fmtAired, fmtDate, fmtShortDate, fmtRating, fmtStars, fmtRange, fmtYears, capitalize, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, excerpt, shareImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtRating, fmtStars, fmtRange, fmtYears, capitalize, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -16,6 +16,7 @@ const { work, entries } = Astro.props;
 const { Content } = await render(work);
 const w = work.data;
 const years = fmtYears(w);
+const released = fmtReleased(w);
 const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} (${years}) : fiche et ${w.type === 'livre' ? 'lectures' : 'visionnages'}.`;
 
 // Séries : pour chaque saison, ses entrées de journal (la plus récente d'abord) et la date
@@ -49,11 +50,12 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
         <span class="meta">{w.creator}&nbsp;– {years}</span>
       </header>
       <div class="prose"><Content /></div>
-      {(w.runtime || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
+      {(w.runtime || released || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
         <div class="details">
           {w.runtime && <p class="meta">{fmtRuntime(w.runtime)}</p>}
           {w.seasons.length > 0 && <p class="meta">{w.seasons.length} {w.seasons.length > 1 ? 'saisons' : 'saison'} · {episodeCount} {episodeCount > 1 ? 'épisodes' : 'épisode'}</p>}
           {w.firstAired && <p class="meta">{fmtAired(w)}</p>}
+          {released && <p class="meta">{released}</p>}
           {w.originalLanguage && <p class="meta">Langue originale : {capitalize(w.originalLanguage)}</p>}
           {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li class={`pill is-${w.type}`}>{t.toLowerCase()}</li>)}</ul>}
         </div>

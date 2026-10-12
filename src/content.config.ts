@@ -8,6 +8,22 @@ const generateId = ({ entry }: { entry: string }) => basename(entry).replace(/\.
 // Un champ laissé vide dans le frontmatter (`date:`) vaut null : on le traite comme absent.
 const optional = <T extends z.ZodTypeAny>(schema: T) => z.preprocess((v) => v ?? undefined, schema.optional());
 
+// Date de sortie / de publication, plus ou moins précise : `2026`, `2026-10` ou `2026-10-08`
+// (une année négative pour l'Antiquité : `-800`).
+const released = z
+  .union([z.number().int(), z.string(), z.date()])
+  .transform((v, ctx) => {
+    if (v instanceof Date) return { year: v.getUTCFullYear(), month: v.getUTCMonth() + 1, day: v.getUTCDate() };
+    const m = String(v).trim().match(/^(-?\d+)(?:-(\d{1,2})(?:-(\d{1,2}))?)?$/);
+    const [year, month, day] = m ? [Number(m[1]), m[2] && Number(m[2]), m[3] && Number(m[3])] : [];
+    const days = month ? new Date(Date.UTC(2000, month, 0)).getUTCDate() : 0; // 2000 : bissextile, le 29 février passe
+    if (!m || (month && (month < 1 || month > 12)) || (day && (day < 1 || day > days))) {
+      ctx.addIssue({ code: 'custom', message: `Date illisible : « ${v} » (ex. 2026, 2026-10 ou 2026-10-08).` });
+      return z.NEVER;
+    }
+    return { year: year!, month: month || undefined, day: day || undefined };
+  });
+
 // Saison d'une série : `episodes` est un nombre d'épisodes, ou la liste de leurs titres.
 const season = z
   .object({
@@ -34,7 +50,7 @@ const works = defineCollection({
       type: z.enum(['film', 'livre', 'serie']),
       creator: z.string().optional(),   // auteur (livres), créateur·ice (séries)
       director: z.string().optional(),  // réalisateur (films)
-      year: optional(z.number().int()), // année de sortie / de publication (séries : déduite de `firstAired`)
+      released: optional(released),     // sortie (films) / publication (livres) : `2026`, `2026-10` ou `2026-10-08`
       firstAired: optional(z.coerce.date()), // début de diffusion (séries)
       lastAired: optional(z.coerce.date()),  // fin de diffusion (séries) : vide si toujours diffusée
       runtime: z.number().int().positive().optional(), // durée en minutes (films)
@@ -52,8 +68,8 @@ const works = defineCollection({
       if (w.type !== 'film' && !w.creator) {
         ctx.addIssue({ code: 'custom', path: ['creator'], message: `Un${w.type === 'serie' ? 'e série' : ' livre'} doit avoir un \`creator\`.` });
       }
-      if (w.year === undefined && !(w.type === 'serie' && w.firstAired)) {
-        ctx.addIssue({ code: 'custom', path: ['year'], message: w.type === 'serie' ? 'Une série doit avoir un `firstAired` (ou une `year`).' : '`year` manquant.' });
+      if (w.released === undefined && !(w.type === 'serie' && w.firstAired)) {
+        ctx.addIssue({ code: 'custom', path: ['released'], message: w.type === 'serie' ? 'Une série doit avoir un `firstAired` (ou un `released`).' : '`released` manquant (ex. 2026, 2026-10 ou 2026-10-08).' });
       }
       if (w.type !== 'serie' && w.seasons.length) {
         ctx.addIssue({ code: 'custom', path: ['seasons'], message: 'Seule une série a des `seasons`.' });
@@ -70,11 +86,12 @@ const works = defineCollection({
     })
     // `creator` reste le champ commun lu par les pages : réalisateur pour un film, auteur pour un livre.
     // Un titre original identique au titre français n'est pas affiché.
+    // `year` (année de sortie, de publication ou de début de diffusion) sert aux affichages courts.
     .transform((w) => ({
       ...w,
       creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)!,
       originalTitle: w.originalTitle !== w.title ? w.originalTitle : undefined,
-      year: (w.year ?? w.firstAired?.getUTCFullYear())!,
+      year: (w.released?.year ?? w.firstAired?.getUTCFullYear())!,
       seasons: w.seasons.map((s, i) => ({ ...s, number: s.number ?? i + 1 })),
     })),
 });

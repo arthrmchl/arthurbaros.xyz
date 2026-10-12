@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { loadFont, textPath } from './font-path.mjs';
 
-const paper = '#eef1ec', ink = '#17232b', film = '#1d5c78', livre = '#66661c';
+const paper = '#eef1ec', ink = '#17232b', film = '#1d5c78', livre = '#66661c', serie = '#8a3d36';
 const width = 1200, height = 630;
 // Police du nom dans le header (Instrument Sans 600), fournie dans scripts/fonts/.
 const font = loadFont(fileURLToPath(new URL('./fonts/InstrumentSans-SemiBold.ttf', import.meta.url)));
@@ -13,7 +13,7 @@ const font = loadFont(fileURLToPath(new URL('./fonts/InstrumentSans-SemiBold.ttf
 // Cotes du header, pour une taille de police F :
 // logo haut de 1.1 F, espace de 0.6rem pour un nom en 1.05rem, nom en line-height 1 centré sur le logo puis remonté de 0.05 F.
 const F = 100;
-const logoH = 1.1 * F, logoW = logoH * 22 / 14, gap = (0.6 / 1.05) * F;
+const logoH = 1.1 * F, logoW = logoH * 27 / 14, gap = (0.6 / 1.05) * F;
 // Ligne de base : haut de la boîte du nom, plus la demi-interligne (négative en line-height 1), plus l'ascendante.
 const asc = font.ascender / font.unitsPerEm, desc = -font.descender / font.unitsPerEm;
 const boxTop = logoH / 2 - F / 2 - 0.05 * F;
@@ -23,9 +23,10 @@ const pad = 50;
 const mark = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(logoW + gap + name.width + 2 * pad)}" height="${Math.ceil(2 * logoH + 2 * pad)}">
   <rect width="100%" height="100%" fill="${paper}"/>
   <g transform="translate(${pad} ${pad})">
-    <svg width="${logoW}" height="${logoH}" viewBox="4 9 22 14">
+    <svg width="${logoW}" height="${logoH}" viewBox="4 9 27 14">
       <circle cx="11" cy="16" r="7" fill="${film}"/>
       <rect x="19" y="9" width="7" height="14" rx="1" fill="${livre}"/>
+      ${[9, 14, 19].map((y) => `<rect x="27" y="${y}" width="4" height="4" rx="0.75" fill="${serie}"/>`).join('')}
     </svg>
     <path d="${name.d}" fill="${ink}"/>
   </g>

@@ -3,7 +3,7 @@ title: "Une étude en rouge"
 originalTitle: "A Study in Scarlet"
 type: livre
 creator: "Sir Arthur Conan Doyle"
-year: 1888
+released: 1888
 originalLanguage: "anglais"
 cover: "https://d28hgpri8am2if.cloudfront.net/book_images/onix/cvr9781804175590/a-study-in-scarlet-a-sherlock-holmes-mystery-9781804175590_hr.jpg"
 tags: [policier]

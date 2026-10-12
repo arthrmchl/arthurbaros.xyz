@@ -6,7 +6,7 @@ creator: "Mark Frost, David Lynch"
 firstAired: 1990-04-08
 lastAired: 2017-09-03
 poster: "https://image.tmdb.org/t/p/w500/4DLOp2jfHtbDUXYoKfAsPIDfeS8.jpg"
-backdrop: "https://image.tmdb.org/t/p/original/vzF0D2yMwc0q7FNnbB5716za3Hp.jpg"
+backdrop: "https://image.tmdb.org/t/p/original/nKrl8qcpjTmWhkUg2SX84OdLBde.jpg"
 tags: [drame, mystère, horreur, fantaisie, surréalisme]
 seasons:
   - firstAired: 1990-04-08

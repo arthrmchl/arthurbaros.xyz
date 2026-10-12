@@ -3,7 +3,7 @@ title: "Ailleurs"
 originalTitle: "Projām"
 type: film
 director: "Gints Zilbalodis"
-year: 2019
+released: 2019
 runtime: 75
 poster: "https://image.tmdb.org/t/p/w500/cgqhSAvejTMPBm2kKErQ1h7vwWH.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/ccwPF5jN09S4Cz7u6qs3T2yKOpO.jpg"

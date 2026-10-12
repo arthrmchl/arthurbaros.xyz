@@ -3,7 +3,7 @@ title: "Le Signe des quatre"
 originalTitle: "The Sign of Four"
 type: livre
 creator: "Sir Arthur Conan Doyle"
-year: 1890
+released: 1890
 originalLanguage: "anglais"
 cover: "https://m.media-amazon.com/images/I/81uICy2idOL._AC_UF1000,1000_QL80_.jpg"
 tags: [policier]

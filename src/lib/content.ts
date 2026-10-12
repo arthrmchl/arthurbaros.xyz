@@ -50,6 +50,15 @@ export const fmtAired = (s: { firstAired?: Date; lastAired?: Date }) =>
   : !s.lastAired ? `Diffusée depuis le ${fmtDate(s.firstAired)}`
   : s.firstAired.getTime() === s.lastAired.getTime() ? `Diffusée le ${fmtDate(s.firstAired)}`
   : `Diffusée ${fmtRange(s.firstAired, s.lastAired)}`;
+/** « Sorti le 8 octobre 2026 », « Publié en mars 1890 » ; rien si seule l'année est connue (elle s'affiche déjà ailleurs). */
+export const fmtReleased = (w: { type: string; released?: { year: number; month?: number; day?: number } }) => {
+  const r = w.released;
+  if (!r?.month) return undefined;
+  const d = new Date(Date.UTC(2000, r.month - 1, r.day ?? 1));
+  d.setUTCFullYear(r.year);
+  const verb = w.type === 'livre' ? 'Publié' : 'Sorti';
+  return r.day ? `${verb} le ${fmtDate(d)}` : `${verb} en ${d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
+};
 /** « Saison 2 », ou « Saison 2 : Le titre » si la saison a un nom. */
 export const seasonLabel = (s: { number: number; title?: string }) => `Saison ${s.number}${s.title ? ` : ${s.title}` : ''}`;
 /** [1, 2, 3, 5] -> « épisodes 1 à 3 et 5 » */
