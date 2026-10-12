@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import EntryList from '../components/EntryList.astro';
+import { getJournal, href } from '../lib/content';
+
+// Servie par GitHub Pages pour toute adresse inconnue : on propose de quoi rebondir.
+const latest = (await getJournal()).slice(0, 5);
+---
+<Base title="Page introuvable" description="Cette page n’existe pas ou a changé d’adresse." noindex>
+  <h1>Page introuvable</h1>
+  <p>Cette page n’existe pas ou a changé d’adresse. Retour à <a href={href('/')}>l’accueil</a> ou au <a href={href('/journal/')}>journal</a>.</p>
+  {latest.length > 0 && (
+    <>
+      <h2>Dernières entrées</h2>
+      <EntryList entries={latest} />
+    </>
+  )}
+</Base>

@@ -3,8 +3,9 @@ import Base from '../layouts/Base.astro';
 import Poster from '../components/Poster.astro';
 import RepeatIcon from '../components/RepeatIcon.astro';
 import ReviewIcon from '../components/ReviewIcon.astro';
+import Stars from '../components/Stars.astro';
 import { site } from '../lib/site';
-import { getJournal, href, posterImage, logDate, fmtDate, fmtShortDate, fmtStars, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
+import { getJournal, href, posterImage, logDate, fmtDate, fmtShortDate, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
 
 const journal = await getJournal();
 const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
@@ -53,7 +54,7 @@ const shelves = ([
             {entries.map(({ log, work, season }) => (
               <Poster work={work} link={`/journal/${log.id}/`} image={season?.poster}>
                 <span class="rated">
-                  {log.data.rating !== undefined && <span class={`stars is-${kind}`}>{fmtStars(log.data.rating)}</span>}
+                  {log.data.rating !== undefined && <Stars rating={log.data.rating} type={kind} />}
                   {log.data.repeat && <RepeatIcon label={repeatLabel[kind]} />}
                   {log.body?.trim() && <ReviewIcon />}
                 </span>{season && <>S{season.number}<span class="sep">·</span></>}{fmtShortDate(log.data.date!)}

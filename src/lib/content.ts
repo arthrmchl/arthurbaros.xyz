@@ -32,6 +32,11 @@ export const fmtRange = (from: Date, to: Date) => {
     : from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', ...(sameYear ? {} : { year: 'numeric' }), timeZone: 'UTC' });
   return `du ${start} au ${fmtDate(to)}`;
 };
+/** Période d'une entrée : « le 8 octobre 2026 », « du 3 au 8 octobre 2026 », ou « depuis le 3 octobre 2026 » si elle est en cours. */
+export const fmtPeriod = (l: { started?: Date; date?: Date }) =>
+  l.started && l.date && l.started.getTime() !== l.date.getTime() ? fmtRange(l.started, l.date)
+  : l.date ? `le ${fmtDate(l.date)}`
+  : `depuis le ${fmtDate(l.started!)}`;
 /** « français » -> « Français » */
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export const fmtRating = (n: number) => `${String(n).replace('.', ',')}/5`;
@@ -77,6 +82,8 @@ export const fmtEpisodes = (list: number[]) => {
 
 /** Date de référence d'une entrée (tri, bilans) : la fin, le dernier épisode vu d'une saison en cours, ou le début d'une lecture en cours. */
 export const logDate = (l: { date?: Date; started?: Date; watched?: { date: Date }[] }) => (l.date ?? l.watched?.at(-1)?.date ?? l.started)!;
+/** L'entrée a un texte (review ou accroche) : sinon sa page n'est pas proposée aux moteurs de recherche (voir aussi astro.config.mjs). */
+export const hasText = (log: { body?: string; data: { summary?: string } }) => Boolean(log.body?.trim() || log.data.summary?.trim());
 /** Lecture commencée mais pas terminée. */
 export const inProgress = (l: { date?: Date }) => !l.date;
 

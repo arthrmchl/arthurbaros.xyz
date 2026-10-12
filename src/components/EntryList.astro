@@ -1,7 +1,8 @@
 ---
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
-import { href, posterImage, fmtRating, fmtStars, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
+import Stars from './Stars.astro';
+import { href, posterImage, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
 const { entries, showType = true } = Astro.props;
 
 // Journal à la Letterboxd : le mois n'est affiché qu'à la première entrée de chaque mois.
@@ -37,9 +38,7 @@ const rows = entries.map((e, i) => {
         </div>
         <span class="year meta">{fmtYears(work.data)}</span>
         {log.data.rating !== undefined
-          ? <span class={`stars is-${type}`} aria-label={`Note : ${fmtRating(log.data.rating)}`} title={fmtRating(log.data.rating)}>
-              {log.data.rating > 0 ? fmtStars(log.data.rating) : '—'}
-            </span>
+          ? <Stars rating={log.data.rating} type={type} />
           : <span class="stars pending" title={season && !log.data.date ? 'Épisodes vus' : undefined}>
               {log.data.date ? '—' : season ? `${season.seen.size}/${season.episodes}` : 'En cours'}
             </span>}
@@ -67,9 +66,9 @@ const rows = entries.map((e, i) => {
   .name:hover { text-decoration: underline; }
   .summary { margin: 0.25rem 0 0; color: var(--muted); font-size: 1rem; line-height: 1.4; }
   .year { text-align: right; }
-  .stars { font-size: 1.05rem; }
+  .entries :global(.stars) { font-size: 1.05rem; }
   /* Lecture en cours : à la place des étoiles. */
-  .pending { font: 600 0.9rem var(--sans); letter-spacing: 0; color: var(--ink); }
+  .entries .pending { font: 600 0.9rem var(--sans); letter-spacing: 0; color: var(--ink); }
   .repeat, .review { display: flex; justify-content: center; }
   .inline-year { display: none; }
 
@@ -78,7 +77,7 @@ const rows = entries.map((e, i) => {
     .entries li { grid-template-columns: 2.25rem 2.5rem 1fr auto auto; grid-template-areas: 'date thumb body body body' 'date thumb stars repeat review';
       gap: 0.15rem 0.9rem; align-items: start; }
     .date { grid-area: date; } .thumb { grid-area: thumb; } .body { grid-area: body; }
-    .stars { grid-area: stars; } .repeat { grid-area: repeat; } .review { grid-area: review; }
+    .entries :global(.stars) { grid-area: stars; } .repeat { grid-area: repeat; } .review { grid-area: review; }
     .year { display: none; } .inline-year { display: inline; }
     .day { font-size: 1.35rem; }
     .name { font-size: 1.1rem; }

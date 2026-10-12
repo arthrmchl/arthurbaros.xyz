@@ -4,12 +4,14 @@ import { site } from '../lib/site';
 // `shareTitle`, `image` et `imageAlt` : aperçu affiché lors du partage d'un lien (Open Graph).
 // `largeImage` : grande image au-dessus de l'aperçu (image paysage) plutôt qu'une vignette.
 // `published` : date de publication d'un article (review).
+// `noindex` : page exclue des moteurs de recherche. `jsonLd` : données structurées schema.org (note dans les résultats de recherche).
 interface Props {
   title?: string; description?: string; shareTitle?: string;
   image?: string; imageAlt?: string; largeImage?: boolean;
   article?: boolean; published?: Date;
+  noindex?: boolean; jsonLd?: Record<string, unknown>;
 }
-const { title, description = site.description, shareTitle, article = false, published } = Astro.props;
+const { title, description = site.description, shareTitle, article = false, published, noindex = false, jsonLd } = Astro.props;
 // Sans image propre à la page, on retombe sur celle du site, au format paysage.
 const hasImage = Boolean(Astro.props.image);
 const image = Astro.props.image || site.image.src;
@@ -32,6 +34,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     <meta name="theme-color" content={site.themeColor.light} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={site.themeColor.dark} media="(prefers-color-scheme: dark)" />
     <link rel="canonical" href={Astro.url.href} />
+    {noindex && <meta name="robots" content="noindex" />}
     <meta property="og:site_name" content={siteName} />
     <meta property="og:locale" content={site.locale} />
     <meta property="og:type" content={article ? 'article' : 'website'} />
@@ -55,12 +58,15 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     <link rel="alternate" type="application/rss+xml" title={siteName} href={href('/rss.xml')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    {/* `<` échappé : un titre contenant « </script> » ne peut pas fermer la balise. */}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href={href('/')}><svg class="logo" viewBox="4 9 27 14" aria-hidden="true"><circle cx="11" cy="16" r="7" fill="var(--film)" /><rect x="19" y="9" width="7" height="14" rx="1" fill="var(--livre)" /><rect x="27" y="9" width="4" height="4" rx="0.75" fill="var(--serie)" /><rect x="27" y="14" width="4" height="4" rx="0.75" fill="var(--serie)" /><rect x="27" y="19" width="4" height="4" rx="0.75" fill="var(--serie)" /></svg><span>{siteName}</span></a>
       <nav aria-label="Navigation principale">
+        <a href={href('/journal/')}>Journal</a>
         <a href={href('/films/')}>Films</a>
         <a href={href('/livres/')}>Livres</a>
         <a href={href('/series/')}>Séries</a>
@@ -98,7 +104,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .brand .logo { display: block; height: 1.1em; width: calc(1.1em * 27 / 14); }
   /* Remonte le nom pour que le logo soit à peu près centré sur ses minuscules (hampes et jambages ignorés). */
   .brand span { position: relative; top: -0.05em; }
-  .site-header nav { display: flex; gap: 1.25rem; font-size: 0.95rem; }
+  .site-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.95rem; }
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
   /* Lu par les lecteurs d'écran et les moteurs de recherche, invisible à l'écran. */
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

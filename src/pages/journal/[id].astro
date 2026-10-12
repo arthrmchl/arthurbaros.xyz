@@ -1,7 +1,9 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { getJournal, href, excerpt, backdropImage, posterImage, fmtDate, fmtShortDate, fmtRange, fmtRating, fmtStars, fmtYears, inProgress, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
+import Stars from '../../components/Stars.astro';
+import { reviewSchema } from '../../lib/schema';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -18,13 +20,11 @@ const poster = season?.poster ?? w.poster;
 
 // Quand : « Vu le … » pour un film ; pour un livre ou une saison, début et fin (la fin peut manquer).
 const when =
-  season && l.started && l.date ? `Vue ${l.started.getTime() === l.date.getTime() ? `le ${fmtDate(l.date)}` : fmtRange(l.started, l.date)}`
-  : season && l.started ? `Commencée le ${fmtDate(l.started)}`
-  : season ? `Arrêtée le ${fmtDate(l.date!)}`
-  : l.started && l.date ? `Lu ${fmtRange(l.started, l.date)}`
-  : l.started ? `Commencé le ${fmtDate(l.started)}`
+  ongoing ? `${season ? 'Commencée' : 'Commencé'} le ${fmtDate(l.started!)}`
+  : season && !l.started ? `Arrêtée le ${fmtDate(l.date!)}`
+  : season ? `Vue ${fmtPeriod(l)}`
   : w.type === 'serie' ? `Avis du ${fmtDate(l.date!)}`
-  : `${verb[w.type]} le ${fmtDate(l.date!)}`;
+  : `${verb[w.type]} ${fmtPeriod(l)}`;
 // Saison arrêtée avant la fin : une `date` est donnée sans que tous les épisodes aient été vus.
 const stopped = season && l.date && !season.complete;
 
@@ -51,6 +51,7 @@ const pills = (!isLivre
 ).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
 <Base title={`Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
+  noindex={!hasText(log)} jsonLd={reviewSchema(log, work, season, Astro.site!)}
   image={backdropImage(w.backdrop) ?? poster ?? w.cover} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
@@ -73,9 +74,7 @@ const pills = (!isLivre
         {season && <p class="season">{seasonLabel(season)}</p>}
         {!isFilm && <p class="meta">de {w.creator}</p>}
         {l.rating !== undefined
-          ? <p class={`stars rating-big is-${w.type}`} aria-label={`Note : ${fmtRating(l.rating)}`} title={fmtRating(l.rating)}>
-              {l.rating > 0 ? fmtStars(l.rating) : '—'}
-            </p>
+          ? <p class="rating-big"><Stars rating={l.rating} type={w.type} /></p>
           : ongoing && <p class="ongoing">{season ? <>Saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}</p>}
         <p class="meta">{when}</p>
       </header>
