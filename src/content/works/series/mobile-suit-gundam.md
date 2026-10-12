@@ -6,7 +6,7 @@ creators: [Yoshiyuki Tomino]
 firstAired: 1979-04-07
 lastAired: 1980-01-26
 poster: "https://image.tmdb.org/t/p/original/rfhJakHcOaGUzvdJHwPILrEUH7z.jpg"
-backdrop: "https://image.tmdb.org/t/p/original/484TQnWzNSm2iGj6XMY66VBDr6g.jpg"
+backdrop: "https://occ-0-2794-2219.1.nflxso.net/dnm/api/v6/6AYY37jfdO6hpXcMjf9Yu5cnmO0/AAAABamJRUTYFx3o1R20tVPIQv8r_YLspL_0w_jeR-d87XfqVqE1IF7gM2Ja8IIHSBaXCZRiW6KgkH48UBYKjA6-T_Q0RRtmke5bNPG0.jpg?r=9f5"
 tags: [mecha, animation, drame]
 seasons:
   - title: ""
