@@ -1,7 +1,7 @@
 // Données structurées schema.org (JSON-LD) : décrivent les œuvres et les reviews aux moteurs de recherche,
 // qui peuvent alors afficher la note sous le lien.
 import type { CollectionEntry } from 'astro:content';
-import { href, excerpt, type Season } from './content';
+import { href, excerpt, slugify, type Season } from './content';
 import { site } from './site';
 
 type Work = CollectionEntry<'works'>;
@@ -11,7 +11,7 @@ const schemaType = { film: 'Movie', livre: 'Book', serie: 'TVSeries' } as const;
 const day = (d: Date) => d.toISOString().slice(0, 10);
 /** URL absolue d'une page du site ou d'une image dans /public. */
 const absolute = (path: string, origin: URL) => new URL(path.startsWith('/') ? href(path) : path, origin).href;
-const persons = (names: string) => names.split(/\s*,\s*/).map((name) => ({ '@type': 'Person', name }));
+const persons = (names: string[], origin: URL) => names.map((name) => ({ '@type': 'Person', name, url: absolute(`/personnes/${slugify(name)}/`, origin) }));
 /** `2026`, `2026-10` ou `2026-10-08` : la précision connue de la date de sortie. */
 const isoReleased = (r: { year: number; month?: number; day?: number }) =>
   [String(r.year), r.month && String(r.month).padStart(2, '0'), r.day && String(r.day).padStart(2, '0')].filter(Boolean).join('-');
@@ -19,14 +19,14 @@ const isoReleased = (r: { year: number; month?: number; day?: number }) =>
 /** Une œuvre : Movie, Book ou TVSeries, avec ses créateurs, sa date de sortie et ses genres. */
 export function workSchema(work: Work, origin: URL) {
   const w = work.data;
-  const image = w.poster ?? w.cover;
+  const image = w.poster;
   return {
     '@type': schemaType[w.type],
     name: w.title,
     ...(w.originalTitle ? { alternateName: w.originalTitle } : {}),
     url: absolute(`/oeuvres/${work.id}/`, origin),
     ...(image ? { image: absolute(image, origin) } : {}),
-    [{ film: 'director', livre: 'author', serie: 'creator' }[w.type]]: persons(w.creator),
+    [{ film: 'director', livre: 'author', serie: 'creator' }[w.type]]: persons(w.creators, origin),
     datePublished: w.released ? isoReleased(w.released) : day(w.firstAired!),
     ...(w.tags.length ? { genre: w.tags } : {}),
     ...(w.runtime ? { duration: `PT${w.runtime}M` } : {}),

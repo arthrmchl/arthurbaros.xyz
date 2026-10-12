@@ -5,16 +5,13 @@ import RepeatIcon from '../components/RepeatIcon.astro';
 import ReviewIcon from '../components/ReviewIcon.astro';
 import Stars from '../components/Stars.astro';
 import { site } from '../lib/site';
-import { getJournal, href, posterImage, logDate, fmtDate, fmtShortDate, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
+import { getJournal, journalYears, latestByWork, href, posterImage, fmtDate, fmtShortDate, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
 
 const journal = await getJournal();
-const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
+const years = journalYears(journal);
 
 // Lectures et saisons en cours : la plus récente entrée de chaque livre ou série, si elle n'a pas de date de fin.
-const seen = new Set<string>();
-const reading = journal
-  .filter(({ work }) => work.data.type !== 'film' && !seen.has(work.id) && seen.add(work.id))
-  .filter(({ log }) => inProgress(log.data));
+const reading = latestByWork(journal.filter(({ work }) => work.data.type !== 'film')).filter(({ log }) => inProgress(log.data));
 // Derniers passages terminés, une rangée par type. Les séries, plus rares, n'ont leur rangée qu'une fois la première vue.
 const recent = (kind: 'film' | 'livre' | 'serie') =>
   journal.filter(({ log, work }) => work.data.type === kind && !inProgress(log.data)).slice(0, 5);
@@ -28,7 +25,7 @@ const shelves = ([
   <h1 class="visually-hidden">{site.name} · {site.tagline}</h1>
   {reading.length > 0 && <div class="now">{reading.map(({ log, work, season }) => (
     <a class="reading" href={href(`/journal/${log.id}/`)} style={`--accent: var(--${work.data.type})`}>
-      {(season?.poster ?? work.data.poster ?? work.data.cover) && <img {...posterImage((season?.poster ?? work.data.poster ?? work.data.cover)!, '6.5rem')} alt="" />}
+      {(season?.poster ?? work.data.poster) && <img {...posterImage((season?.poster ?? work.data.poster)!, '6.5rem')} alt="" />}
       <div>
         <p class="meta">
           {season ? 'En train de regarder' : 'En train de lire'}

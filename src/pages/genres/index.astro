@@ -1,0 +1,26 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { href, slugify } from '../../lib/content';
+import { genres } from '../../lib/genres';
+
+// Genres utilisés, avec le nombre d'œuvres de chacun.
+const works = await getCollection('works');
+const used = genres
+  .map((genre) => ({ genre, n: works.filter((w) => (w.data.tags as string[]).includes(genre)).length }))
+  .filter(({ n }) => n > 0);
+---
+<Base title="Genres" description={`Les genres des films, livres et séries du site : ${used.map(({ genre }) => genre).join(', ')}.`}>
+  <h1>Genres</h1>
+  <ul class="genres">
+    {used.map(({ genre, n }) => (
+      <li><a class="pill" href={href(`/genres/${slugify(genre)}/`)}>{genre}</a> <span class="meta">{n}</span></li>
+    ))}
+  </ul>
+</Base>
+
+<style>
+  .genres { list-style: none; padding: 0; margin: 1.5rem 0; display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+  .genres .pill { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .genres .meta { margin-left: 0.15rem; }
+</style>

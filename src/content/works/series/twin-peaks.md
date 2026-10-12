@@ -2,12 +2,12 @@
 title: "Twin Peaks"
 originalTitle: ""
 type: serie
-creator: "Mark Frost, David Lynch"
+creators: ["Mark Frost", "David Lynch"]
 firstAired: 1990-04-08
 lastAired: 2017-09-03
 poster: "https://image.tmdb.org/t/p/w500/4DLOp2jfHtbDUXYoKfAsPIDfeS8.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/nKrl8qcpjTmWhkUg2SX84OdLBde.jpg"
-tags: [drame, mystère, horreur, fantaisie, surréalisme]
+tags: [drame, mystère, horreur, fantastique, surréalisme]
 seasons:
   - firstAired: 1990-04-08
     lastAired: 1990-05-23

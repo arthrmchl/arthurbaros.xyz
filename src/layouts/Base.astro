@@ -1,6 +1,11 @@
 ---
 import { href } from '../lib/content';
 import { site } from '../lib/site';
+// Polices servies par le site (pas d'appel à Google Fonts) : Newsreader variable (graisse et taille optique), Instrument Sans 400 et 600.
+import '@fontsource-variable/newsreader/opsz.css';
+import '@fontsource-variable/newsreader/opsz-italic.css';
+import '@fontsource/instrument-sans/400.css';
+import '@fontsource/instrument-sans/600.css';
 // `shareTitle`, `image` et `imageAlt` : aperçu affiché lors du partage d'un lien (Open Graph).
 // `largeImage` : grande image au-dessus de l'aperçu (image paysage) plutôt qu'une vignette.
 // `published` : date de publication d'un article (review).
@@ -56,11 +61,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={href('/apple-touch-icon.png')} />
     <link rel="alternate" type="application/rss+xml" title={siteName} href={href('/rss.xml')} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     {/* `<` échappé : un titre contenant « </script> » ne peut pas fermer la balise. */}
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
   </head>
   <body>
     <header class="site-header">
@@ -75,7 +77,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     </header>
     <main><slot /></main>
     <footer class="site-footer">
-      <a href={href('/rss.xml')}>Flux RSS</a>
+      <a href={href('/genres/')}>Genres</a><span class="sep">·</span><a href={href('/rss.xml')}>Flux RSS</a>
     </footer>
   </body>
 </html>
@@ -84,7 +86,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   :root {
     --paper: #eef1ec; --ink: #17232b; --muted: #55646e; --line: #c9d1cb;
     --film: #1d5c78; --livre: #66661c; --serie: #8a3d36;
-    --serif: 'Newsreader', Georgia, serif; --sans: 'Instrument Sans', system-ui, sans-serif;
+    --serif: 'Newsreader Variable', Georgia, serif; --sans: 'Instrument Sans', system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root { --paper: #12191e; --ink: #e6ebe7; --muted: #94a3ad; --line: #2b3841; --film: #7cc0dd; --livre: #c6c66a; --serie: #e39a8f; }
@@ -113,13 +115,13 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .notice { font: 0.95rem var(--sans); padding: 0.6rem 0.9rem; border-left: 3px solid var(--livre); background: color-mix(in srgb, var(--livre) 10%, transparent); }
   .prose img { max-width: 100%; height: auto; }
   .prose blockquote { margin-left: 0; padding-left: 1rem; border-left: 2px solid var(--line); color: var(--muted); }
-  .cover { float: right; width: 8rem; margin: 0 0 1rem 1.5rem; }
-  .backdrop { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; margin: 0 0 1.5rem; }
   /* Pastille : information courte (lieu, version, tag…), aux couleurs du type d'œuvre. */
   .pill { padding: 0.1rem 0.6rem; border-radius: 999px; font: 600 0.8rem/1.6 var(--sans);
     color: var(--film); background: color-mix(in srgb, var(--film) 14%, transparent); }
   .pill.is-livre { color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
   .pill.is-serie { color: var(--serie); background: color-mix(in srgb, var(--serie) 14%, transparent); }
+  a.pill { text-decoration: none; }
+  a.pill:hover { background: color-mix(in srgb, currentColor 24%, transparent); }
   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }
 
   /* Mise en page commune aux fiches d'œuvre et aux reviews (à la Letterboxd). */

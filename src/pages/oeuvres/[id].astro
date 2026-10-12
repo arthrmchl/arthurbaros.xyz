@@ -3,8 +3,9 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Stars from '../../components/Stars.astro';
 import ViewingRow from '../../components/ViewingRow.astro';
+import People from '../../components/People.astro';
 import { workPageSchema } from '../../lib/schema';
-import { getJournal, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, abandonedLabel, imageLabel, slugify, seasonLabel, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -32,15 +33,14 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
 const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
 ---
 <Base title={`${w.title} (${years}), ${w.creator}`} description={description} jsonLd={workPageSchema(work, Astro.site!)}
-  image={backdropImage(w.backdrop) ?? w.poster ?? w.cover} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  image={backdropImage(w.backdrop) ?? w.poster} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Structure à la Letterboxd : affiche à gauche, informations à droite. -->
   <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
-    {(w.poster || w.cover) && (
+    {w.poster && (
       <aside class="side">
-        {w.poster && <img class="poster" {...posterImage(w.poster, '9rem')} alt={`Affiche : ${w.title}`} />}
-        {w.cover && <img class="poster" {...posterImage(w.cover, '9rem')} alt={`Couverture : ${w.title}`} />}
+        <img class="poster" {...posterImage(w.poster, '9rem')} alt={`${imageLabel(w.type)} : ${w.title}`} />
       </aside>
     )}
 
@@ -48,7 +48,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
       <header class="title-line">
         <h1>{w.title}</h1>
         {w.originalTitle && <span class="original-title">{w.originalTitle}</span>}
-        <span class="meta">{w.creator}&nbsp;– {years}</span>
+        <span class="meta"><People names={w.creators} />&nbsp;– {years}</span>
       </header>
       <div class="prose"><Content /></div>
       {(w.runtime || released || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
@@ -58,7 +58,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
           {w.firstAired && <p class="meta">{fmtAired(w)}</p>}
           {released && <p class="meta">{released}</p>}
           {w.originalLanguage && <p class="meta">Langue originale : {capitalize(w.originalLanguage)}</p>}
-          {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li class={`pill is-${w.type}`}>{t.toLowerCase()}</li>)}</ul>}
+          {w.tags.length > 0 && <ul class="tags">{w.tags.map((t) => <li><a class={`pill is-${w.type}`} href={href(`/genres/${slugify(t)}/`)}>{t}</a></li>)}</ul>}
         </div>
       )}
     </div>
@@ -97,7 +97,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
                   <ul class="viewings readings">
                     {s.logs.map(({ log, season }) => (
                       <ViewingRow log={log} type="serie" period extras={[log.data.version ? versionLabel[log.data.version] : '—']}>
-                        <Fragment slot="status">{!log.data.date ? <>En cours<span class="sep">·</span>{season!.seen.size}/{season!.episodes}</> : season!.complete ? '—' : 'Abandonnée'}</Fragment>
+                        <Fragment slot="status">{log.data.abandoned ? abandonedLabel(season) : !log.data.date ? <>En cours<span class="sep">·</span>{season!.seen.size}/{season!.episodes}</> : '—'}</Fragment>
                       </ViewingRow>
                     ))}
                   </ul>
@@ -126,7 +126,9 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
         <h2>Mes visionnages</h2>
         <ul class="viewings">
           {entries.map(({ log }) => (
-            <ViewingRow log={log} type="film" extras={[log.data.venue ? venueLabel[log.data.venue] : '—', log.data.version ? versionLabel[log.data.version] : '—']} />
+            <ViewingRow log={log} type="film" extras={[log.data.venue ? venueLabel[log.data.venue] : '—', log.data.version ? versionLabel[log.data.version] : '—']}>
+              <Fragment slot="status">{log.data.abandoned ? abandonedLabel() : '—'}</Fragment>
+            </ViewingRow>
           ))}
         </ul>
       </>
@@ -135,7 +137,7 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
         <ul class="viewings readings">
           {entries.map(({ log }) => (
             <ViewingRow log={log} type="livre" period extras={[log.data.language ? capitalize(log.data.language) : '—']}>
-              <Fragment slot="status">{log.data.date ? '—' : 'En cours'}</Fragment>
+              <Fragment slot="status">{log.data.abandoned ? abandonedLabel() : log.data.date ? '—' : 'En cours'}</Fragment>
             </ViewingRow>
           ))}
         </ul>

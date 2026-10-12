@@ -5,9 +5,9 @@ interface Props { work: CollectionEntry<'works'>; badge?: string; link?: string;
 // `link` : destination du clic (la fiche d'œuvre par défaut). `image` remplace l'affiche (ex. celle d'une saison).
 // Le slot sert de légende sous l'image.
 const { work, badge, link = `/oeuvres/${work.id}/` } = Astro.props;
-const image = Astro.props.image ?? work.data.poster ?? work.data.cover;
+const image = Astro.props.image ?? work.data.poster;
 ---
-<li>
+<li style={`--accent: var(--${work.data.type})`}>
   <a href={href(link)} title={`${work.data.title}${work.data.originalTitle ? ` / ${work.data.originalTitle}` : ''} (${fmtYears(work.data)})`}>
     {image
       ? <img {...posterImage(image, '(max-width: 34rem) 33vw, 12rem')} alt={work.data.title} loading="lazy" />

@@ -2,7 +2,7 @@
 title: "Notre salut"
 originalTitle: ""
 type: film
-director: "Emmanuel Marre"
+creators: ["Emmanuel Marre"]
 released: 2026
 runtime: 155
 poster: "https://image.tmdb.org/t/p/w500/tFzSSetNzvdaxms6RLfr2pyu9sM.jpg"

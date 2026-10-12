@@ -1,0 +1,110 @@
+---
+import { fmtRuntime, capitalize } from '../lib/content';
+// Bilan chiffré d'une année : une tuile par type d'œuvre, puis la répartition des notes.
+// `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues.
+interface Props {
+  entries: {
+    work: { data: { type: 'film' | 'livre' | 'serie'; runtime?: number } };
+    log: { data: { date?: Date; rating?: number; abandoned: boolean; venue?: 'cinema' | 'maison'; version?: 'vf' | 'vostfr'; accompanied?: boolean; language?: string } };
+    season?: { complete: boolean };
+  }[];
+  episodes: number;
+}
+const { entries, episodes } = Astro.props;
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+const count = <T,>(list: T[], test: (x: T) => boolean) => list.filter(test).length;
+/** [« 3 au cinéma », « 2 à la maison »], sans les catégories vides : une ligne, affichée avec des points médians. */
+const split = (parts: [number, string][]) => parts.filter(([n]) => n > 0).map(([n, label]) => `${n} ${label}`);
+
+const films = entries.filter((e) => e.work.data.type === 'film').map((e) => ({ ...e.log.data, runtime: e.work.data.runtime }));
+const minutes = films.reduce((sum, f) => sum + (f.runtime ?? 0), 0);
+const seasons = entries.filter((e) => e.season);
+const books = entries.filter((e) => e.work.data.type === 'livre').map((e) => e.log.data);
+const languages = Object.entries(Object.groupBy(books.filter((b) => b.language), (b) => b.language!))
+  .map(([lang, list]) => [list!.length, `en ${lang}`] as [number, string]);
+
+const tiles = [
+  films.length > 0 && {
+    kind: 'film', value: films.length, label: films.length > 1 ? 'films vus' : 'film vu',
+    lines: [
+      minutes > 0 && [`${fmtRuntime(minutes)} de film`],
+      split([[count(films, (f) => f.venue === 'cinema'), 'au cinéma'], [count(films, (f) => f.venue === 'maison'), 'à la maison']]),
+      split([[count(films, (f) => f.version === 'vostfr'), 'en VOSTFR'], [count(films, (f) => f.version === 'vf'), 'en VF']]),
+      [count(films, (f) => f.accompanied === false), count(films, (f) => f.accompanied === true)].some((n) => n > 0)
+        && [`Seul : ${count(films, (f) => f.accompanied === false)}`, `Accompagné : ${count(films, (f) => f.accompanied === true)}`],
+      count(films, (f) => f.abandoned) > 0 && [plural(count(films, (f) => f.abandoned), 'abandonné', 'abandonnés')],
+    ],
+  },
+  (episodes > 0 || seasons.length > 0) && {
+    kind: 'serie', value: episodes, label: episodes > 1 ? 'épisodes vus' : 'épisode vu',
+    lines: [
+      split([[count(seasons, (e) => Boolean(e.season?.complete)), seasons.length > 1 ? 'saisons terminées' : 'saison terminée'],
+        [count(seasons, (e) => !e.log.data.date), 'en cours'], [count(seasons, (e) => e.log.data.abandoned), seasons.length > 1 ? 'abandonnées' : 'abandonnée']]),
+    ],
+  },
+  books.length > 0 && {
+    kind: 'livre', value: count(books, (b) => Boolean(b.date) && !b.abandoned), label: count(books, (b) => Boolean(b.date) && !b.abandoned) > 1 ? 'livres lus' : 'livre lu',
+    lines: [
+      split([[count(books, (b) => !b.date), 'en cours'], [count(books, (b) => b.abandoned), 'abandonné']]),
+      split(languages),
+    ],
+  },
+].filter((t) => t !== false);
+
+// Répartition des notes de 0 à 5, toutes œuvres confondues.
+const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
+const histogram = [0, 1, 2, 3, 4, 5].map((r) => ({ rating: r, n: count(ratings, (x) => x === r) }));
+const max = Math.max(1, ...histogram.map((h) => h.n));
+const avg = ratings.length ? (ratings.reduce((s, r) => s + r, 0) / ratings.length).toFixed(1).replace('.', ',') : undefined;
+---
+<section class="stats" aria-labelledby="stats-title">
+  <h2 id="stats-title">En chiffres</h2>
+  <div class="tiles">
+    {tiles.map((t) => (
+      <div class="tile" style={`--accent: var(--${t.kind})`}>
+        <p class="value">{t.value}</p>
+        <p class="label">{t.label}</p>
+        {(t.lines.filter((l) => l && l.length > 0) as string[][]).map((parts) => (
+          <p class="meta">{parts.map((part, i) => <>{i > 0 && <span class="sep">·</span>}{i === 0 ? capitalize(part) : part}</>)}</p>
+        ))}
+      </div>
+    ))}
+  </div>
+  {ratings.length > 0 && (
+    <figure class="ratings">
+      <figcaption class="meta">Répartition des notes<span class="sep">·</span>moyenne {avg}/5 sur {plural(ratings.length, 'note', 'notes')}</figcaption>
+      <!-- Une barre par note ; le nombre est écrit au-dessus, la liste reste lisible sans les barres. -->
+      <ol class="bars">
+        {histogram.map(({ rating, n }) => (
+          <li title={`${plural(n, 'entrée notée', 'entrées notées')} ${rating}/5`}>
+            <span class="count">{n}</span>
+            <span class="bar" style={`--h: ${n / max}`} />
+            <span class="axis">{rating}<span aria-hidden="true">★</span><span class="visually-hidden">/5</span></span>
+          </li>
+        ))}
+      </ol>
+    </figure>
+  )}
+</section>
+
+<style>
+  .stats { margin: 2rem 0 1rem; }
+  .stats h2 { margin: 0 0 1rem; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 1rem; }
+  .tile { padding: 0.9rem 1rem; border-radius: 6px; background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .tile p { margin: 0; }
+  .value { font: 600 2.2rem/1 var(--sans); font-variant-numeric: tabular-nums; }
+  .tile .label { margin: 0.2rem 0 0.5rem; font: 600 0.95rem var(--sans); color: var(--accent); }
+  .tile .meta + .meta { margin-top: 0.15rem; }
+
+  .ratings { margin: 1.5rem 0 0; }
+  .bars { list-style: none; padding: 0; margin: 0.75rem 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 3.5rem)); gap: 2px;
+    align-items: end; height: 8rem; }
+  .bars li { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .count { font: 600 0.8rem var(--sans); font-variant-numeric: tabular-nums; color: var(--muted); }
+  /* Barre fine arrondie en haut, posée sur la ligne de base ; hauteur proportionnelle au nombre de notes. */
+  .bar { width: 70%; height: calc(var(--h) * 5.5rem); min-height: 2px; margin-top: 0.2rem; border-radius: 4px 4px 0 0;
+    background: color-mix(in srgb, var(--ink) 55%, transparent); }
+  .bars li:hover .bar { background: var(--ink); }
+  .axis { width: 100%; padding-top: 0.3rem; border-top: 1px solid var(--line); text-align: center; font: 0.85rem var(--sans); color: var(--muted); }
+</style>

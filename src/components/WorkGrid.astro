@@ -1,0 +1,22 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Poster from './Poster.astro';
+import Stars from './Stars.astro';
+// Grille d'affiches menant aux fiches : pages Films / Livres / Séries, genres et personnes.
+// `rating` : dernière note, affichée sous l'affiche ; `badge` : étiquette sur l'affiche (« En cours »).
+interface Props { items: { work: CollectionEntry<'works'>; rating?: number; badge?: string }[] }
+const { items } = Astro.props;
+---
+<ul class="posters">
+  {items.map(({ work, rating, badge }) => rating !== undefined
+    ? <Poster work={work} badge={badge}><Stars rating={rating} type={work.data.type} /></Poster>
+    : <Poster work={work} badge={badge} />)}
+</ul>
+
+<style>
+  .posters { list-style: none; padding: 0; margin: 1.5rem 0; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem; align-items: end; }
+  @media (max-width: 34rem) {
+    .posters { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+  }
+</style>

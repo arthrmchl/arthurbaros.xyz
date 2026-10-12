@@ -1,6 +1,6 @@
 import rss from '@astrojs/rss';
 import type { APIContext } from 'astro';
-import { getJournal, href, excerpt, fmtRating, typeLabel, logDate, seasonLabel } from '../lib/content';
+import { getJournal, href, excerpt, abandonedLabel, fmtRating, typeLabel, logDate, seasonLabel } from '../lib/content';
 import { site } from '../lib/site';
 
 export async function GET(context: APIContext) {
@@ -10,7 +10,7 @@ export async function GET(context: APIContext) {
     description: site.description,
     site: context.site!,
     items: journal.slice(0, 50).map(({ log, work, season }) => ({
-      title: `${work.data.title}${season ? `, ${seasonLabel(season)}` : ''} (${typeLabel[work.data.type]}, ${log.data.rating !== undefined ? fmtRating(log.data.rating) : log.data.date ? 'sans note' : 'en cours'})`,
+      title: `${work.data.title}${season ? `, ${seasonLabel(season)}` : ''} (${typeLabel[work.data.type]}, ${log.data.rating !== undefined ? fmtRating(log.data.rating) : log.data.abandoned ? abandonedLabel(season).toLowerCase() : log.data.date ? 'sans note' : 'en cours'})`,
       pubDate: logDate(log.data),
       // Accroche (ou début de la review) en résumé, et la review complète pour les lecteurs de flux.
       description: log.data.summary || excerpt(log.body),

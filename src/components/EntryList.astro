@@ -2,7 +2,8 @@
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
 import Stars from './Stars.astro';
-import { href, posterImage, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
+import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
+interface Props { entries: JournalEntry[]; showType?: boolean }
 const { entries, showType = true } = Astro.props;
 
 // Journal à la Letterboxd : le mois n'est affiché qu'à la première entrée de chaque mois.
@@ -17,7 +18,7 @@ const rows = entries.map((e, i) => {
 ---
 <ul class="entries">
   {rows.map(({ log, work, season, d, month }) => {
-    const image = season?.poster ?? work.data.poster ?? work.data.cover;
+    const image = season?.poster ?? work.data.poster;
     const type = work.data.type;
     return (
       <li>
@@ -40,7 +41,7 @@ const rows = entries.map((e, i) => {
         {log.data.rating !== undefined
           ? <Stars rating={log.data.rating} type={type} />
           : <span class="stars pending" title={season && !log.data.date ? 'Épisodes vus' : undefined}>
-              {log.data.date ? '—' : season ? `${season.seen.size}/${season.episodes}` : 'En cours'}
+              {log.data.abandoned ? abandonedLabel(season) : log.data.date ? '—' : season ? `${season.seen.size}/${season.episodes}` : 'En cours'}
             </span>}
         <span class="repeat">{log.data.repeat && <RepeatIcon label={repeatLabel[type]} />}</span>
         <span class="review">{log.body?.trim() && <ReviewIcon />}</span>

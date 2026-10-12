@@ -1,0 +1,12 @@
+---
+import { href, slugify } from '../lib/content';
+// Noms de réalisateur·ices, auteur·ices ou créateur·ices, chacun menant à sa page.
+interface Props { names: string[] }
+const { names } = Astro.props;
+---
+{names.map((name, i) => <>{i > 0 && ', '}<a class="person" href={href(`/personnes/${slugify(name)}/`)}>{name}</a></>)}
+
+<style>
+  .person { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  .person:hover { text-decoration-color: currentColor; }
+</style>

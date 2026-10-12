@@ -1,6 +1,7 @@
 import { defineCollection, reference, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { basename } from 'node:path';
+import { genres, type Genre } from './lib/genres';
 
 // L'identifiant d'une entrée = son nom de fichier sans extension (ex. "parasite").
 const generateId = ({ entry }: { entry: string }) => basename(entry).replace(/\.md$/, '');
@@ -40,6 +41,16 @@ const season = z
     titles: typeof episodes === 'number' ? [] : episodes.map((t) => t || undefined),
   }));
 
+// Genre d'une fiche : dans la liste fermée de src/lib/genres.ts.
+const genre = z.string().refine((g): g is Genre => (genres as readonly string[]).includes(g), (g) => ({
+  message: `Genre inconnu : « ${g} ». Genres possibles : ${genres.join(', ')} (liste dans src/lib/genres.ts).`,
+}));
+
+// Un champ inconnu (faute de frappe, ancien nom comme `director` ou `cover`) fait échouer le build plutôt que d'être ignoré.
+const strict: z.ZodErrorMap = (issue, ctx) => issue.code === 'unrecognized_keys'
+  ? { message: `Champ inconnu : ${issue.keys.map((k) => `\`${k}\``).join(', ')}. Vérifie son nom (modèles dans src/content/templates/).` }
+  : { message: ctx.defaultError };
+
 // Fiche d'œuvre : stable, une seule par film, livre ou série.
 const works = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/works', generateId }),
@@ -48,26 +59,19 @@ const works = defineCollection({
       title: z.string(),                // titre français
       originalTitle: z.preprocess((v) => v || undefined, z.string().optional()), // titre original, si différent
       type: z.enum(['film', 'livre', 'serie']),
-      creator: z.string().optional(),   // auteur (livres), créateur·ice (séries)
-      director: z.string().optional(),  // réalisateur (films)
+      creators: z.array(z.string().min(1)).nonempty('Ajoute au moins un nom dans `creators`.'), // réalisateur·ices, auteur·ices ou créateur·ices
       released: optional(released),     // sortie (films) / publication (livres) : `2026`, `2026-10` ou `2026-10-08`
       firstAired: optional(z.coerce.date()), // début de diffusion (séries)
       lastAired: optional(z.coerce.date()),  // fin de diffusion (séries) : vide si toujours diffusée
       runtime: z.number().int().positive().optional(), // durée en minutes (films)
       originalLanguage: z.string().optional(), // langue originale (livres), ex. « français »
-      poster: z.string().optional(),    // affiche (films, séries) : URL ou chemin dans /public
+      poster: z.string().optional(),    // affiche (films, séries) ou couverture (livres) : URL ou chemin dans /public
       backdrop: z.string().optional(),  // image de fond (films, séries) : URL ou chemin dans /public
-      cover: z.string().optional(),     // couverture (livres) : URL ou chemin dans /public
       seasons: z.array(season).default([]), // saisons (séries)
-      tags: z.array(z.string()).default([]),
-    })
+      tags: z.array(genre).default([]), // genres, dans la liste de src/lib/genres.ts
+    }, { errorMap: strict })
+    .strict()
     .superRefine((w, ctx) => {
-      if (w.type === 'film' && !w.director && !w.creator) {
-        ctx.addIssue({ code: 'custom', path: ['director'], message: 'Un film doit avoir un `director`.' });
-      }
-      if (w.type !== 'film' && !w.creator) {
-        ctx.addIssue({ code: 'custom', path: ['creator'], message: `Un${w.type === 'serie' ? 'e série' : ' livre'} doit avoir un \`creator\`.` });
-      }
       if (w.released === undefined && !(w.type === 'serie' && w.firstAired)) {
         ctx.addIssue({ code: 'custom', path: ['released'], message: w.type === 'serie' ? 'Une série doit avoir un `firstAired` (ou un `released`).' : '`released` manquant (ex. 2026, 2026-10 ou 2026-10-08).' });
       }
@@ -84,12 +88,12 @@ const works = defineCollection({
         }
       }
     })
-    // `creator` reste le champ commun lu par les pages : réalisateur pour un film, auteur pour un livre.
+    // `creator` : les noms à la suite, pour les affichages en texte (« Mark Frost, David Lynch »).
     // Un titre original identique au titre français n'est pas affiché.
     // `year` (année de sortie, de publication ou de début de diffusion) sert aux affichages courts.
     .transform((w) => ({
       ...w,
-      creator: (w.type === 'film' ? w.director ?? w.creator : w.creator)!,
+      creator: w.creators.join(', '),
       originalTitle: w.originalTitle !== w.title ? w.originalTitle : undefined,
       year: (w.released?.year ?? w.firstAired?.getUTCFullYear())!,
       seasons: w.seasons.map((s, i) => ({ ...s, number: s.number ?? i + 1 })),
@@ -123,7 +127,8 @@ const logs = defineCollection({
       watched: z.array(z.object({ date: z.coerce.date(), episodes })).default([]), // épisodes vus, jour par jour (saisons)
       started: optional(z.coerce.date()),       // début de lecture (livres)
       date: optional(z.coerce.date()),          // date du visionnage / de la fin de lecture (absente si lecture en cours)
-      rating: optional(z.number().min(0).max(5).multipleOf(0.5)), // absente si lecture en cours
+      rating: optional(z.number().int('La note est un nombre entier de 0 à 5.').min(0).max(5)), // absente si lecture en cours
+      abandoned: z.boolean().default(false),   // arrêté avant la fin : la `date` est celle de l'arrêt
       repeat: z.boolean().default(false),      // revisionnage / relecture
       spoilers: z.boolean().default(false),
       venue: z.enum(['cinema', 'maison']).optional(), // lieu du visionnage (films)
@@ -131,8 +136,12 @@ const logs = defineCollection({
       version: z.enum(['vf', 'vostfr']).optional(), // version vue (films, séries)
       language: optional(z.string()),          // langue de lecture (livres), ex. « français »
       summary: z.string().optional(),          // phrase d'accroche (listes, RSS)
-    })
+    }, { errorMap: strict })
+    .strict()
     .superRefine((l, ctx) => {
+      if (l.abandoned && !l.date) {
+        ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée `abandoned` doit avoir une `date` (le jour de l’arrêt).' });
+      }
       if (!l.date && !l.started && !l.watched.length) {
         ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée doit avoir une `date` (fin), un `started` (début de lecture) ou des épisodes `watched`.' });
       }

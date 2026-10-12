@@ -2,10 +2,10 @@
 title: ""
 originalTitle: ""
 type: film
-director: ""
+creators: []        # réalisateur·ice(s) : ["Nom", "Autre nom"]
 released: 
 runtime: 
 poster: ""
 backdrop: ""
-tags: []
+tags: []            # genres : voir la liste dans src/lib/genres.ts
 ---

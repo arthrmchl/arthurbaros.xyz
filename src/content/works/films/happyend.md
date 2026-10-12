@@ -2,7 +2,7 @@
 title: "Happyend"
 originalTitle: "HAPPYEND"
 type: film
-director: "Neo Sora"
+creators: ["Neo Sora"]
 released: 2024
 runtime: 113
 poster: "https://image.tmdb.org/t/p/w500/zrGO2yfZ6TpfOynpDDupW04i3y2.jpg"

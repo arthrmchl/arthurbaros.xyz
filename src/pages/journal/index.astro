@@ -1,12 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
-import { getJournal, href, logDate } from '../../lib/content';
+import { getJournal, journalYears, href, logDate } from '../../lib/content';
 
 // Toutes les entrées, de la plus récente à la plus ancienne, regroupées par année avec un lien vers le bilan.
 const journal = await getJournal();
-const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a)
-  .map((year) => ({ year, entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year) }));
+const years = journalYears(journal).map((year) => ({ year, entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year) }));
 const count = `${journal.length} ${journal.length > 1 ? 'entrées' : 'entrée'}`;
 ---
 <Base title="Journal" description={`Tous mes visionnages et lectures, du plus récent au plus ancien : ${count}.`}>

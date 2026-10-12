@@ -2,7 +2,7 @@
 title: "Frères d'armes"            # titre français
 originalTitle: "Band of Brothers"    # titre original (à laisser vide s'il est identique)
 type: serie
-creator: "Tom Hanks, Steven Spielberg"          # créateur·ice(s), séparé·es par des virgules
+creators: ["Tom Hanks", "Steven Spielberg"]
 firstAired: 2001-09-09         # début de diffusion, ex. 2022-02-18
 lastAired: 2001-11-04          # fin de diffusion : à laisser vide si la série est toujours diffusée
 poster: "https://image.tmdb.org/t/p/w500/eLdcio9HBKzsdIJGeD80oObDfkr.jpg"

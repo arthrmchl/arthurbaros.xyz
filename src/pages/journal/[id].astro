@@ -2,8 +2,9 @@
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Stars from '../../components/Stars.astro';
+import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, abandonedLabel, imageLabel, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -19,19 +20,19 @@ const years = fmtYears(w);
 const poster = season?.poster ?? w.poster;
 
 // Quand : « Vu le … » pour un film ; pour un livre ou une saison, début et fin (la fin peut manquer).
+const e = season ? 'e' : ''; // accord avec « la saison »
 const when =
-  ongoing ? `${season ? 'Commencée' : 'Commencé'} le ${fmtDate(l.started!)}`
-  : season && !l.started ? `Arrêtée le ${fmtDate(l.date!)}`
+  ongoing ? `Commencé${e} le ${fmtDate(l.started!)}`
+  : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} le ${fmtDate(l.started)}, arrêté${e} le ${fmtDate(l.date!)}`
+  : l.abandoned ? `Arrêté${e} le ${fmtDate(l.date!)}`
   : season ? `Vue ${fmtPeriod(l)}`
   : w.type === 'serie' ? `Avis du ${fmtDate(l.date!)}`
   : `${verb[w.type]} ${fmtPeriod(l)}`;
-// Saison arrêtée avant la fin : une `date` est donnée sans que tous les épisodes aient été vus.
-const stopped = season && l.date && !season.complete;
 
 // Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.
 const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${years}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
 
-// Titre de l'aperçu : « Review de Titre (année) · ★★★½ », sans note pour une lecture en cours.
+// Titre de l'aperçu : « Review de Titre (année) · ★★★☆☆ », sans note pour une lecture en cours.
 const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
 const shareTitle = `Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years})${stars ? ` · ${stars}` : ''}`;
 
@@ -41,27 +42,27 @@ const pills = (!isLivre
       l.venue && venueLabel[l.venue],
       l.version && versionLabel[l.version],
       l.repeat ? 'revisionnage' : 'premier visionnage',
-      stopped && 'abandonnée',
+      l.abandoned && abandonedLabel(season),
       l.accompanied !== undefined && (l.accompanied ? 'accompagné' : 'seul'),
     ]
   : [
       l.language,
       l.repeat ? 'relecture' : 'première lecture',
+      l.abandoned && abandonedLabel(),
     ]
 ).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
 <Base title={`Review de ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
   noindex={!hasText(log)} jsonLd={reviewSchema(log, work, season, Astro.site!)}
-  image={backdropImage(w.backdrop) ?? poster ?? w.cover} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${w.poster ? 'Affiche' : 'Couverture'} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  image={backdropImage(w.backdrop) ?? poster} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->
   <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
-    {(poster || w.cover) && (
+    {poster && (
       <aside class="side">
         <a href={href(`/oeuvres/${work.id}/`)}>
-          {poster && <img class="poster" {...posterImage(poster, '9rem')} alt={`Affiche : ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''}`} />}
-          {w.cover && <img class="poster" {...posterImage(w.cover, '9rem')} alt={`Couverture : ${w.title}`} />}
+          <img class="poster" {...posterImage(poster, '9rem')} alt={`${imageLabel(w.type)} : ${w.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''}`} />
         </a>
       </aside>
     )}
@@ -72,10 +73,12 @@ const pills = (!isLivre
           <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{years}</span>
         </div>
         {season && <p class="season">{seasonLabel(season)}</p>}
-        {!isFilm && <p class="meta">de {w.creator}</p>}
+        {!isFilm && <p class="meta">de <People names={w.creators} /></p>}
         {l.rating !== undefined
           ? <p class="rating-big"><Stars rating={l.rating} type={w.type} /></p>
-          : ongoing && <p class="ongoing">{season ? <>Saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}</p>}
+          : (ongoing || l.abandoned) && <p class="ongoing" style={`--accent: var(--${w.type})`}>
+              {l.abandoned ? abandonedLabel(season) : season ? <>Saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}
+            </p>}
         <p class="meta">{when}</p>
       </header>
 
@@ -112,9 +115,9 @@ const pills = (!isLivre
   h1 a:hover { text-decoration: underline; }
   .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
   .season { margin: 0.2rem 0 0; font: 600 1rem var(--sans); color: var(--serie); }
-  .ongoing { --accent: var(--livre); display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
+  /* Lecture ou saison en cours, entrée abandonnée : à la place des étoiles, aux couleurs du type d'œuvre. */
+  .ongoing { display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
     font: 600 0.8rem/1.6 var(--sans); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
-  .season ~ .ongoing { --accent: var(--serie); }
   /* Épisodes vus, jour par jour : la date à gauche, les épisodes en liste à droite. */
   .watched { margin-top: 1.5rem; }
   .watched h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }

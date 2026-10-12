@@ -2,7 +2,7 @@
 title: "Soudain" 
 originalTitle: "急に具合が悪くなる"
 type: film
-director: "Ryusuke Hamaguchi"
+creators: ["Ryusuke Hamaguchi"]
 released: 2026
 runtime: 196
 poster: "https://image.tmdb.org/t/p/w500/gniQjGg0LaLaiWQOqxdVJkMH0Jx.jpg"

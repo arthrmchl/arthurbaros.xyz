@@ -1,10 +1,10 @@
 ---
 import { fmtRating, fmtStars } from '../lib/content';
-// Note en étoiles (à la Letterboxd), aux couleurs du type d'œuvre ; une note de 0 s'affiche « — ».
-// Les lecteurs d'écran lisent « Note : 3,5/5 » plutôt qu'une suite de symboles.
+// Note en étoiles (à la Letterboxd), aux couleurs du type d'œuvre : ★★★☆☆ pour 3, ☆☆☆☆☆ pour 0.
+// Les lecteurs d'écran lisent « Note : 3/5 » plutôt qu'une suite de symboles.
 interface Props { rating: number; type?: 'film' | 'livre' | 'serie' }
 const { rating, type = 'film' } = Astro.props;
 ---
 <span class={`stars is-${type}`} role="img" aria-label={`Note : ${fmtRating(rating)}`} title={fmtRating(rating)}>
-  {rating > 0 ? fmtStars(rating) : '—'}
+  {fmtStars(rating)}
 </span>

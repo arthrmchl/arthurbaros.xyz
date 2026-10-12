@@ -1,28 +1,36 @@
 ---
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
-import { getJournal, logDate } from '../../lib/content';
+import YearStats from '../../components/YearStats.astro';
+import { getJournal, journalYears, logDate } from '../../lib/content';
 
 export async function getStaticPaths() {
   const journal = await getJournal();
-  const years = [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))];
-  return years.map((year) => ({
+  return journalYears(journal).map((year) => ({
     params: { year: String(year) },
-    props: { year, entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year) },
+    props: {
+      year,
+      entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year),
+      // Épisodes vus pendant l'année, d'après les jours de visionnage (une saison peut chevaucher deux années).
+      episodes: journal.flatMap(({ log }) => log.data.watched)
+        .filter(({ date }) => date.getUTCFullYear() === year)
+        .reduce((n, { episodes }) => n + episodes.length, 0),
+    },
   }));
 }
-const { year, entries } = Astro.props;
+const { year, entries, episodes } = Astro.props;
 const films = entries.filter((e) => e.work.data.type === 'film').length;
 const livres = entries.filter((e) => e.work.data.type === 'livre').length;
-// Saisons de séries terminées (ou en cours) dans l'année ; les avis sur une série entière ne comptent pas.
 const series = entries.filter((e) => e.season).length;
+const reviews = entries.filter((e) => e.work.data.type === 'serie' && !e.season).length;
+// Toutes les entrées comptées ici entrent dans la note moyenne (si elles sont notées).
 const counts = [
   `${films} ${films > 1 ? 'films' : 'film'}`,
   `${livres} ${livres > 1 ? 'livres' : 'livre'}`,
   series && `${series} ${series > 1 ? 'saisons' : 'saison'} de série`,
+  reviews && `${reviews} avis sur une série entière`,
 ].filter(Boolean) as string[];
 const countText = counts.length > 2 ? `${counts.slice(0, -1).join(', ')} et ${counts.at(-1)}` : counts.join(' et ');
-// Moyenne sur les entrées notées seulement (une lecture en cours n'a pas encore de note).
 const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
 const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
 const description = `Bilan ${year} : ${countText}`
@@ -30,9 +38,8 @@ const description = `Bilan ${year} : ${countText}`
 ---
 <Base title={`Bilan ${year} : reviews et critiques de l’année`} description={description}>
   <h1>{year}</h1>
-  <p class="meta">
-    {countText}.
-    {ratings.length > 0 && <>Note moyenne : {avg.toFixed(1).replace('.', ',')}/5.</>}
-  </p>
+  <p class="meta">{countText}.</p>
+  <YearStats entries={entries} episodes={episodes} />
+  <h2>Journal</h2>
   <EntryList entries={entries} />
 </Base>

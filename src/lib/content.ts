@@ -39,9 +39,9 @@ export const fmtPeriod = (l: { started?: Date; date?: Date }) =>
   : `depuis le ${fmtDate(l.started!)}`;
 /** « français » -> « Français » */
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-export const fmtRating = (n: number) => `${String(n).replace('.', ',')}/5`;
-/** 3.5 -> « ★★★½ » (à la Letterboxd) */
-export const fmtStars = (n: number) => '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '');
+export const fmtRating = (n: number) => `${n}/5`;
+/** 3 -> « ★★★☆☆ » : toujours cinq symboles, pour qu'un 0 se distingue d'une absence de note. */
+export const fmtStars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
 
 /** « 2022–2025 », « depuis 2022 » : années de diffusion d'une série ; l'année seule sinon. */
 export const fmtYears = (w: { year: number; type: string; firstAired?: Date; lastAired?: Date }) => {
@@ -86,13 +86,21 @@ export const logDate = (l: { date?: Date; started?: Date; watched?: { date: Date
 export const hasText = (log: { body?: string; data: { summary?: string } }) => Boolean(log.body?.trim() || log.data.summary?.trim());
 /** Lecture commencée mais pas terminée. */
 export const inProgress = (l: { date?: Date }) => !l.date;
+/** « Affiche » ou « Couverture », selon le type d'œuvre (textes alternatifs). */
+export const imageLabel = (type: string) => (type === 'livre' ? 'Couverture' : 'Affiche');
+/** « Abandonné », « Abandonnée » (une saison). */
+export const abandonedLabel = (season?: unknown) => (season ? 'Abandonnée' : 'Abandonné');
+
+/** « David Lynch » -> « david-lynch », « comédie » -> « comedie » : identifiant d'URL. */
+export const slugify = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 export type Season = CollectionEntry<'works'>['data']['seasons'][number];
 
 /**
  * Saison suivie : sa fiche, et les épisodes vus (date du dernier passage pour chacun).
  * Le début et la fin du suivi se déduisent des jours de visionnage : la saison est terminée
- * quand tous ses épisodes ont été vus, ou plus tôt si une `date` de fin est donnée (abandon).
+ * quand tous ses épisodes ont été vus, ou plus tôt si elle est `abandoned` (la `date` est alors celle de l'arrêt).
  */
 function followSeason(log: CollectionEntry<'logs'>, work: CollectionEntry<'works'>) {
   const fail = (msg: string) => { throw new Error(`logs/${log.id} : ${msg}`); };
@@ -108,6 +116,11 @@ function followSeason(log: CollectionEntry<'logs'>, work: CollectionEntry<'works
   }
   const last = l.watched.at(-1)?.date;
   const complete = seen.size === season.episodes;
+  if (l.date && !complete && !l.abandoned) {
+    const missing = Array.from({ length: season.episodes }, (_, i) => i + 1).filter((n) => !seen.has(n));
+    fail(`une \`date\` de fin est donnée mais il manque les ${fmtEpisodes(missing)} : ajoute-les à \`watched\`, ou mets \`abandoned: true\` si tu as arrêté.`);
+  }
+  if (l.abandoned && complete) fail('tous les épisodes ont été vus : la saison ne peut pas être `abandoned`.');
   return {
     data: { ...l, started: l.started ?? l.watched[0]?.date, date: l.date ?? (complete ? last : undefined) },
     season: { ...season, seen, complete },
@@ -122,9 +135,12 @@ export async function getJournal() {
     const work = byId.get(log.data.work.id)!;
     const type = work.data.type;
     const fail = (msg: string) => { throw new Error(`logs/${log.id} : ${msg}`); };
-    // Seule une lecture ou une saison peut être en cours : un visionnage a toujours une date et une note.
-    if (type === 'film' && (!log.data.date || log.data.rating === undefined)) {
-      fail('un visionnage doit avoir une `date` et une `rating`.');
+    // Seule une lecture ou une saison peut être en cours : un visionnage a toujours une date, et une note s'il n'est pas abandonné.
+    if (type === 'film' && (!log.data.date || (log.data.rating === undefined && !log.data.abandoned))) {
+      fail('un visionnage doit avoir une `date` et une `rating` (ou `abandoned: true`).');
+    }
+    if (type === 'serie' && log.data.season === undefined && log.data.abandoned) {
+      fail('un avis sur une série entière ne peut pas être `abandoned` : précise la `season` arrêtée.');
     }
     if (type !== 'serie' && log.data.season !== undefined) fail('seule une série a des saisons (`season`).');
     if (type === 'serie' && log.data.season === undefined && !log.data.date) {
@@ -134,8 +150,56 @@ export async function getJournal() {
     const { data, season } = followSeason(log, work);
     return { log: { ...log, data }, work, season };
   });
-  return journal.sort((a, b) => logDate(b.log.data).getTime() - logDate(a.log.data).getTime());
+  journal.sort((a, b) => logDate(b.log.data).getTime() - logDate(a.log.data).getTime());
+  warnMissingRepeats(journal);
+  return journal;
 }
+
+/** Une entrée du journal, reliée à sa fiche (et à sa saison pour une série). */
+export type JournalEntry = Awaited<ReturnType<typeof getJournal>>[number];
+
+const warned = new Set<string>();
+/**
+ * Revisionnage oublié : une entrée plus ancienne existe pour la même œuvre (ou la même saison) mais `repeat` n'est pas coché.
+ * Simple avertissement, une seule fois par entrée : le premier passage peut dater d'avant le journal.
+ * Les avis sur une série entière ne comptent pas.
+ */
+function warnMissingRepeats(journal: { log: { id: string; data: { repeat: boolean } }; work: CollectionEntry<'works'>; season?: { number: number; title?: string } }[]) {
+  const seen = new Set<string>();
+  for (const { log, work, season } of journal.toReversed()) {
+    if (work.data.type === 'serie' && !season) continue;
+    const key = `${work.id}/${season?.number ?? ''}`;
+    if (seen.has(key) && !log.data.repeat && !warned.has(log.id)) {
+      warned.add(log.id);
+      console.warn(`⚠ logs/${log.id} : ${work.data.title}${season ? `, ${seasonLabel(season).toLowerCase()}` : ''} a déjà une entrée plus ancienne. Revisionnage ou relecture ? Ajoute \`repeat: true\`.`);
+    }
+    seen.add(key);
+  }
+}
+
+/** La plus récente entrée de chaque œuvre (le journal étant trié de la plus récente à la plus ancienne). */
+export const latestByWork = <T extends { work: { id: string } }>(journal: T[]) => {
+  const seen = new Set<string>();
+  return journal.filter(({ work }) => !seen.has(work.id) && Boolean(seen.add(work.id)));
+};
+/**
+ * Œuvres pour une grille d'affiches, avec la dernière note donnée : les plus récemment vues ou lues d'abord,
+ * puis celles qui n'ont pas encore d'entrée (à voir, à lire) par ordre alphabétique.
+ */
+export const workItems = (works: CollectionEntry<'works'>[], journal: { work: { id: string }; log: { data: { rating?: number } } }[]) => {
+  const ids = new Set(works.map((w) => w.id));
+  const latest = latestByWork(journal.filter(({ work }) => ids.has(work.id)));
+  const byId = new Map(works.map((w) => [w.id, w]));
+  const rating = (id: string) => journal.find((e) => e.work.id === id && e.log.data.rating !== undefined)?.log.data.rating;
+  const seen = new Set(latest.map(({ work }) => work.id));
+  return [
+    ...latest.map(({ work }) => ({ work: byId.get(work.id)!, rating: rating(work.id) })),
+    ...works.filter((w) => !seen.has(w.id)).sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr')).map((work) => ({ work, rating: undefined })),
+  ];
+};
+/** Années du journal, de la plus récente à la plus ancienne. */
+export const journalYears = (journal: { log: { data: Parameters<typeof logDate>[0] } }[]) =>
+  [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
 
 /** Début d'un texte Markdown en texte brut, coupé proprement vers `max` caractères (aperçus de liens). */
 export const excerpt = (markdown = '', max = 200) => {

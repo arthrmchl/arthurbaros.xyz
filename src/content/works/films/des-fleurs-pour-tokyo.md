@@ -2,7 +2,7 @@
 title: "Des Fleurs pour Tokyo"
 originalTitle: "見はらし世代"
 type: film
-director: "Yuiga Danzuka"
+creators: ["Yuiga Danzuka"]
 released: 2025
 runtime: 115
 poster: "https://image.tmdb.org/t/p/w500/n4OtiOk7uReqIjCEYfKGyqu4oA6.jpg"

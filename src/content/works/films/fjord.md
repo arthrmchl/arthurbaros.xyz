@@ -2,7 +2,7 @@
 title: "Fjord"
 originalTitle: ""
 type: film
-director: "Cristian Mungiu"
+creators: ["Cristian Mungiu"]
 released: 2026
 runtime: 146
 poster: "https://image.tmdb.org/t/p/w500/od5PWXCT4KhZ9ekVbnmq8kEWBjO.jpg"

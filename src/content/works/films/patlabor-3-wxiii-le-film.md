@@ -2,7 +2,7 @@
 title: "Patlabor 3 : WXIII - Le Film"
 originalTitle: "WXIII 機動警察パトレイバー"
 type: film
-director: "Takuji Endo, Fumihiko Takayama"
+creators: ["Takuji Endo", "Fumihiko Takayama"]
 released: 2002
 runtime: 107
 poster: "https://image.tmdb.org/t/p/w500/r3SoYEA0c6L0BTcHoKRODWQjU5N.jpg"
