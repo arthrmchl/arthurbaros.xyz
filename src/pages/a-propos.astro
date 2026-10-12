@@ -14,6 +14,7 @@ import { href } from '../lib/content';
   <div class="about">
     <p class="lead">Je laisse mes émotions et mes ressentis me guider.</p>
     <p class="text">Ici, je partage mes avis, analyses et autres critiques sur les œuvres que je regarde, lis ou écoute. Mon objectif est de garder une trace des marques qu’elles laissent dans mon esprit. Rechercher les informations pour remplir les fiches des différentes réalisations me permet également de m’intéresser un peu plus à chacune d’entre elles et de ne pas être dans une bête consommation de contenus.</p>
+    <p class="signoff" lang="en">Godspeed</p>
   </div>
 </Base>
 
@@ -28,4 +29,7 @@ import { href } from '../lib/content';
   .about { padding-top: 2rem; border-top: 1px solid var(--line); }
   .lead { margin: 0; font-size: clamp(1.4rem, 4.5vw, 1.75rem); line-height: 1.35; text-wrap: balance; }
   .text { margin: 1.5rem 0 0; line-height: 1.6; }
+  /* Mot de la fin en signature : italique de Newsreader à grande taille optique, plus fine. */
+  .signoff { margin: 2rem 0 0; font-size: 1.5rem; font-style: italic; font-weight: 300;
+    font-variation-settings: 'opsz' 48; line-height: 1; }
 </style>

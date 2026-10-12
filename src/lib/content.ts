@@ -13,16 +13,26 @@ export const repeatLabel = { film: 'Revisionnage', livre: 'Relecture', serie: 'R
 export const venueLabel = { cinema: 'Au cinéma', maison: 'À la maison' } as const;
 export const versionLabel = { vf: 'VF', vostfr: 'VOSTFR' } as const;
 
-export const fmtDate = (d: Date) =>
-  d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+/** Précision d'une date d'entrée : `2026` (année), `2026-10` (mois) ou `2026-10-08` (jour). */
+export type DatePrecision = 'year' | 'month' | 'day';
+/** « 8 octobre 2026 », « octobre 2026 » ou « 2026 », selon la précision connue. */
+export const fmtDate = (d: Date, precision: DatePrecision = 'day') =>
+  precision === 'year' ? String(d.getUTCFullYear())
+  : d.toLocaleDateString('fr-FR', { ...(precision === 'day' ? { day: 'numeric' } : {}), month: 'long', year: 'numeric', timeZone: 'UTC' });
+/** « le 8 octobre 2026 », « en octobre 2026 » ou « en 2026 ». */
+export const fmtOn = (d: Date, precision: DatePrecision = 'day') => `${precision === 'day' ? 'le' : 'en'} ${fmtDate(d, precision)}`;
+/** `2026-10-08`, `2026-10` ou `2026` : attribut `datetime` d'une balise <time>, données structurées. */
+export const isoDate = (d: Date, precision: DatePrecision = 'day') =>
+  d.toISOString().slice(0, { year: 4, month: 7, day: 10 }[precision]);
 /** 132 -> « 2 h 12 » */
 export const fmtRuntime = (min: number) => {
   const h = Math.floor(min / 60), m = min % 60;
   return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
 };
 /** « 8 oct. » : date courte pour les légendes d'affiches. */
-export const fmtShortDate = (d: Date) =>
-  d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+export const fmtShortDate = (d: Date, precision: DatePrecision = 'day') =>
+  precision === 'year' ? String(d.getUTCFullYear())
+  : d.toLocaleDateString('fr-FR', precision === 'day' ? { day: 'numeric', month: 'short', timeZone: 'UTC' } : { month: 'short', year: 'numeric', timeZone: 'UTC' });
 /** Du 3 au 8 octobre 2026 / du 28 septembre au 8 octobre 2026 : on ne répète pas le mois ni l'année. */
 export const fmtRange = (from: Date, to: Date) => {
   const sameYear = from.getUTCFullYear() === to.getUTCFullYear();
@@ -32,10 +42,13 @@ export const fmtRange = (from: Date, to: Date) => {
     : from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', ...(sameYear ? {} : { year: 'numeric' }), timeZone: 'UTC' });
   return `du ${start} au ${fmtDate(to)}`;
 };
-/** Période d'une entrée : « le 8 octobre 2026 », « du 3 au 8 octobre 2026 », ou « depuis le 3 octobre 2026 » si elle est en cours. */
-export const fmtPeriod = (l: { started?: Date; date?: Date }) =>
-  l.started && l.date && l.started.getTime() !== l.date.getTime() ? fmtRange(l.started, l.date)
-  : l.date ? `le ${fmtDate(l.date)}`
+/**
+ * Période d'une entrée : « le 8 octobre 2026 », « du 3 au 8 octobre 2026 », ou « depuis le 3 octobre 2026 » si elle est en cours.
+ * Une date de fin imprécise s'affiche seule : « en octobre 2026 », « en 2026 ».
+ */
+export const fmtPeriod = (l: { started?: Date; date?: Date; datePrecision?: DatePrecision }) =>
+  l.started && l.date && l.datePrecision === 'day' && l.started.getTime() !== l.date.getTime() ? fmtRange(l.started, l.date)
+  : l.date ? fmtOn(l.date, l.datePrecision)
   : `depuis le ${fmtDate(l.started!)}`;
 /** « français » -> « Français » */
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

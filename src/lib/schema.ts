@@ -1,11 +1,11 @@
 // Données structurées schema.org (JSON-LD) : décrivent les œuvres et les reviews aux moteurs de recherche,
 // qui peuvent alors afficher la note sous le lien.
 import type { CollectionEntry } from 'astro:content';
-import { href, excerpt, slugify, type Season } from './content';
+import { href, excerpt, slugify, isoDate, type DatePrecision, type Season } from './content';
 import { site } from './site';
 
 type Work = CollectionEntry<'works'>;
-type Log = { id: string; body?: string; data: { date?: Date; started?: Date; rating?: number; summary?: string } };
+type Log = { id: string; body?: string; data: { date?: Date; datePrecision?: DatePrecision; started?: Date; rating?: number; summary?: string } };
 
 const schemaType = { film: 'Movie', livre: 'Book', serie: 'TVSeries' } as const;
 const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -49,7 +49,7 @@ export function reviewSchema(log: Log, work: Work, season: Season | undefined, o
     url: absolute(`/journal/${log.id}/`, origin),
     inLanguage: 'fr',
     author: { '@type': 'Person', name: site.author, url: absolute('/a-propos/', origin) },
-    datePublished: day((l.date ?? l.started)!),
+    datePublished: l.date ? isoDate(l.date, l.datePrecision) : day(l.started!),
     itemReviewed: season
       ? { '@type': 'TVSeason', name: season.title ?? `Saison ${season.number}`, seasonNumber: season.number, numberOfEpisodes: season.episodes, partOfSeries: item }
       : item,

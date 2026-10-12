@@ -2,29 +2,34 @@
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
 import Stars from './Stars.astro';
-import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, typeLabel, logDate, repeatLabel, seasonLabel } from '../lib/content';
+import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, typeLabel, logDate, isoDate, repeatLabel, seasonLabel } from '../lib/content';
 interface Props { entries: JournalEntry[]; showType?: boolean }
 const { entries, showType = true } = Astro.props;
 
 // Journal à la Letterboxd : le mois n'est affiché qu'à la première entrée de chaque mois.
+// Une date connue au mois ou à l'année près n'a pas de jour : son mois (ou son année) est toujours affiché.
 const sameYear = new Set(entries.map(({ log }) => logDate(log.data).getUTCFullYear())).size <= 1;
 const monthOf = (d: Date) =>
   d.toLocaleDateString('fr-FR', { month: 'short', ...(sameYear ? {} : { year: 'numeric' }), timeZone: 'UTC' });
-const rows = entries.map((e, i) => {
+let prev: string | undefined;
+const rows = entries.map((e) => {
   const d = logDate(e.log.data);
-  const prev = i > 0 ? monthOf(logDate(entries[i - 1].log.data)) : undefined;
-  return { ...e, d, month: monthOf(d) !== prev ? monthOf(d) : undefined };
+  const precision = e.log.data.date ? e.log.data.datePrecision : 'day';
+  const label = precision === 'year' ? String(d.getUTCFullYear()) : monthOf(d);
+  const month = precision !== 'day' || label !== prev ? label : undefined;
+  prev = label;
+  return { ...e, d, precision, month, day: precision === 'day' ? d.getUTCDate() : undefined };
 });
 ---
 <ul class="entries">
-  {rows.map(({ log, work, season, d, month }) => {
+  {rows.map(({ log, work, season, d, precision, month, day }) => {
     const image = season?.poster ?? work.data.poster;
     const type = work.data.type;
     return (
       <li>
-        <time class="date" datetime={d.toISOString().slice(0, 10)}>
+        <time class="date" datetime={isoDate(d, precision)}>
           <span class="month">{month}</span>
-          <span class="day">{d.getUTCDate()}</span>
+          {day && <span class="day">{day}</span>}
         </time>
         <a class="thumb" href={href(`/journal/${log.id}/`)} tabindex="-1" aria-hidden="true">
           {image ? <img {...posterImage(image, '2.75rem')} alt="" loading="lazy" /> : <span class="placeholder" />}

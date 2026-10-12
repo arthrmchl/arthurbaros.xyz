@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, abandonedLabel, imageLabel, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, abandonedLabel, imageLabel, seasonLabel, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -23,10 +23,10 @@ const poster = season?.poster ?? w.poster;
 const e = season ? 'e' : ''; // accord avec « la saison »
 const when =
   ongoing ? `Commencé${e} le ${fmtDate(l.started!)}`
-  : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} le ${fmtDate(l.started)}, arrêté${e} le ${fmtDate(l.date!)}`
-  : l.abandoned ? `Arrêté${e} le ${fmtDate(l.date!)}`
+  : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} le ${fmtDate(l.started)}, arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
+  : l.abandoned ? `Arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : season ? `Vue ${fmtPeriod(l)}`
-  : w.type === 'serie' ? `Avis du ${fmtDate(l.date!)}`
+  : w.type === 'serie' ? l.datePrecision === 'day' ? `Avis du ${fmtDate(l.date!)}` : `Vue ${fmtOn(l.date!, l.datePrecision)}`
   : `${verb[w.type]} ${fmtPeriod(l)}`;
 
 // Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.

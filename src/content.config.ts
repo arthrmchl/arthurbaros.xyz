@@ -25,6 +25,18 @@ const released = z
     return { year: year!, month: month || undefined, day: day || undefined };
   });
 
+// Précision d'une date d'entrée de journal : `2026` (année), `2026-10` (mois) ou `2026-10-08` (jour).
+type DatePrecision = 'year' | 'month' | 'day';
+const toDate = (r: { year: number; month?: number; day?: number }) => {
+  const d = new Date(Date.UTC(2000, (r.month ?? 1) - 1, r.day ?? 1));
+  d.setUTCFullYear(r.year);
+  return d;
+};
+// Dernier jour de la période : le 31 décembre pour une année, le dernier jour du mois pour un mois.
+const periodEnd = (d: Date, precision: DatePrecision) =>
+  precision === 'day' ? d
+  : new Date(Date.UTC(d.getUTCFullYear(), precision === 'year' ? 12 : d.getUTCMonth() + 1, 0));
+
 // Saison d'une série : `episodes` est un nombre d'épisodes, ou la liste de leurs titres.
 const season = z
   .object({
@@ -126,7 +138,7 @@ const logs = defineCollection({
       season: optional(z.number().int().positive()), // saison suivie (séries) ; absente pour un avis sur toute la série
       watched: z.array(z.object({ date: z.coerce.date(), episodes })).default([]), // épisodes vus, jour par jour (saisons)
       started: optional(z.coerce.date()),       // début de lecture (livres)
-      date: optional(z.coerce.date()),          // date du visionnage / de la fin de lecture (absente si lecture en cours)
+      date: optional(released),                 // date du visionnage / de la fin de lecture (absente si lecture en cours) : `2026`, `2026-10` ou `2026-10-08`
       rating: optional(z.number().int('La note est un nombre entier de 0 à 5.').min(0).max(5)), // absente si lecture en cours
       abandoned: z.boolean().default(false),   // arrêté avant la fin : la `date` est celle de l'arrêt
       repeat: z.boolean().default(false),      // revisionnage / relecture
@@ -138,6 +150,12 @@ const logs = defineCollection({
       summary: z.string().optional(),          // phrase d'accroche (listes, RSS)
     }, { errorMap: strict })
     .strict()
+    // `date` devient le premier jour de la période connue (tri, bilans) ; `datePrecision` dit ce qui est connu, pour l'affichage.
+    .transform(({ date, ...l }) => ({
+      ...l,
+      date: date && toDate(date),
+      datePrecision: (!date || date.day ? 'day' : date.month ? 'month' : 'year') as DatePrecision,
+    }))
     .superRefine((l, ctx) => {
       if (l.abandoned && !l.date) {
         ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée `abandoned` doit avoir une `date` (le jour de l’arrêt).' });
@@ -145,7 +163,7 @@ const logs = defineCollection({
       if (!l.date && !l.started && !l.watched.length) {
         ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée doit avoir une `date` (fin), un `started` (début de lecture) ou des épisodes `watched`.' });
       }
-      if (l.started && l.date && l.started > l.date) {
+      if (l.started && l.date && l.started > periodEnd(l.date, l.datePrecision)) {
         ctx.addIssue({ code: 'custom', path: ['started'], message: '`started` doit précéder `date`.' });
       }
       if (l.watched.length && l.season === undefined) {

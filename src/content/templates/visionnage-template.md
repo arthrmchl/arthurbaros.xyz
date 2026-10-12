@@ -1,6 +1,6 @@
 ---
 work: 
-date: 
+date:     # 2026-10-08, ou 2026-10 / 2026 si tu ne sais plus le jour exact
 rating:    # note entière de 0 à 5
 abandoned: false # true si tu as arrêté avant la fin (avec la `date` de l'arrêt)
 repeat: false
