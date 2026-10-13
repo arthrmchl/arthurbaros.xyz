@@ -31,9 +31,10 @@ const seasons = w.seasons.map((s) => {
 });
 const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
 const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
+// Aperçu lors du partage : pas de couverture pour un livre, l'image du site à la place.
 ---
 <Base title={`${w.title} (${years}), ${w.creator}`} description={description} jsonLd={workPageSchema(work, Astro.site!)}
-  image={backdropImage(w.backdrop) ?? w.poster} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  image={backdropImage(w.backdrop) ?? (w.type === 'livre' ? undefined : w.poster)} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Structure à la Letterboxd : affiche à gauche, informations à droite. -->

@@ -30,6 +30,7 @@ const when =
   : `${verb[w.type]} ${fmtPeriod(l)}`;
 
 // Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.
+// Pas de couverture pour un livre : l'aperçu prend l'image du site.
 const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${years}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
 
 // Titre de l'aperçu : « Review de Titre (année) · ★★★☆☆ », sans note pour une lecture en cours.
@@ -54,7 +55,7 @@ const pills = (!isLivre
 ---
 <Base title={`Review de ${w.title}${seasonSuffix(season)} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
   noindex={!hasText(log)} jsonLd={reviewSchema(log, work, season, Astro.site!)}
-  image={backdropImage(w.backdrop) ?? poster} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  image={backdropImage(w.backdrop) ?? (isLivre ? undefined : poster)} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->
