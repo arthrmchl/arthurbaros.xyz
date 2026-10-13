@@ -45,7 +45,8 @@ seasons:
       - "The Path to the Black Lodge"
       - "Miss Twin Peaks"
       - "Beyond Life and Death"
-  - firstAired: 2017-05-21
+  - title: "Twin Peaks: The Return"
+    firstAired: 2017-05-21
     lastAired: 2017-09-03
     episodes:
       - "My Log Has a Message for You"

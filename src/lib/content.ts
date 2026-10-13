@@ -78,15 +78,15 @@ export const fmtReleased = (w: { type: string; released?: { year: number; month?
   return r.day ? `${verb} le ${fmtDate(d)}` : `${verb} en ${d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
 };
 /**
- * « Saison 2 », ou « Saison 2 : Le titre » si la saison a un nom.
+ * Nom de la saison si elle en a un, sinon « Saison 2 ».
  * Seule saison de la série : pas de numéro, seulement son nom si elle en a un (sinon rien).
  */
 export const seasonLabel = (s: { number: number; title?: string; only: boolean }) =>
-  s.only ? s.title : `Saison ${s.number}${s.title ? ` : ${s.title}` : ''}`;
-/** Suite d'un titre d'œuvre : « , saison 2 », « , saison 2 : Le titre », ou rien pour la seule saison d'une série sans nom. */
+  s.title || (s.only ? undefined : `Saison ${s.number}`);
+/** Suite d'un titre d'œuvre : « , saison 2 », « , Le titre », ou rien pour la seule saison d'une série sans nom. */
 export const seasonSuffix = (s?: { number: number; title?: string; only: boolean }) => {
   const label = s && seasonLabel(s);
-  return label ? `, ${label.replace(/^Saison/, 'saison')}` : '';
+  return label ? `, ${s.title ? label : label.replace(/^Saison/, 'saison')}` : '';
 };
 /** [1, 2, 3, 5] -> « épisodes 1 à 3 et 5 » */
 export const fmtEpisodes = (list: number[]) => {
