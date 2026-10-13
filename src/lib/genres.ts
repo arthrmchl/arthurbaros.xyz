@@ -2,6 +2,7 @@
 // Pour un nouveau genre, ajoute-le ici.
 export const genres = [
   'action', 'animation', 'aventure', 'comédie', 'documentaire', 'drame', 'famille', 'fantastique', 'guerre', 'histoire',
-  'horreur', 'musique', 'mystère', 'policier', 'romance', 'science-fiction', 'surréalisme', 'thriller', 'western', 'mecha'
+  'horreur', 'musique', 'mystère', 'policier', 'romance', 'science-fiction', 'surréalisme', 'thriller', 'western', 'mecha',
+  'tokusatsu'
 ] as const;
 export type Genre = (typeof genres)[number];
