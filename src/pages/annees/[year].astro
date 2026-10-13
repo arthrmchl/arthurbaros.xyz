@@ -23,6 +23,7 @@ const films = entries.filter((e) => e.work.data.type === 'film').length;
 const livres = entries.filter((e) => e.work.data.type === 'livre').length;
 const series = entries.filter((e) => e.season).length;
 const reviews = entries.filter((e) => e.work.data.type === 'serie' && !e.season).length;
+// Résumé pour la description de la page (les tuiles de YearStats le disent déjà à l'écran).
 // Toutes les entrées comptées ici entrent dans la note moyenne (si elles sont notées).
 const counts = [
   `${films} ${films > 1 ? 'films' : 'film'}`,
@@ -38,8 +39,7 @@ const description = `Bilan ${year} : ${countText}`
 ---
 <Base title={`Bilan ${year} : reviews et critiques de l’année`} description={description}>
   <h1>{year}</h1>
-  <p class="meta">{countText}.</p>
-  <YearStats entries={entries} episodes={episodes} />
+  <YearStats year={year} entries={entries} episodes={episodes} />
   <h2>Journal</h2>
   <EntryList entries={entries} />
 </Base>
