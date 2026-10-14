@@ -3,6 +3,6 @@
 export const genres = [
   'action', 'animation', 'aventure', 'comédie', 'documentaire', 'drame', 'famille', 'fantastique', 'guerre', 'histoire',
   'horreur', 'musique', 'mystère', 'policier', 'romance', 'science-fiction', 'surréalisme', 'thriller', 'western', 'mecha',
-  'tokusatsu'
+  'tokusatsu', 'historique'
 ] as const;
 export type Genre = (typeof genres)[number];
