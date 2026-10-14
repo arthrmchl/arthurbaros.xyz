@@ -10,4 +10,6 @@ export const site = {
   image: { src: '/og.png', alt: 'Logo et nom du site arthurbaros.xyz', width: 1200, height: 630 },
   // Couleur de la barre du navigateur sur mobile, en mode clair et sombre (fond de page).
   themeColor: { light: '#eef1ec', dark: '#12191e' },
+  // Compte Instagram : lien en pied de page et sur la page À propos.
+  instagram: { url: 'https://www.instagram.com/arthurxbaros/', handle: 'arthurxbaros' },
 } as const;

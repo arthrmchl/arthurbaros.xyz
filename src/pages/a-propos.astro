@@ -1,9 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import { href } from '../lib/content';
+import { site } from '../lib/site';
+import { aboutPageSchema } from '../lib/schema';
 ---
 <Base title="À propos" description="Je laisse mes émotions et mes ressentis me guider."
-  image="/arthur.jpg" imageAlt="Portrait en noir et blanc d’Arthur, de profil, moustache, anneaux aux oreilles et serpent tatoué dans le cou">
+  image="/arthur.jpg" imageAlt="Portrait en noir et blanc d’Arthur, de profil, moustache, anneaux aux oreilles et serpent tatoué dans le cou"
+  jsonLd={aboutPageSchema(Astro.site!)}>
   <header class="intro">
     <img class="portrait" src={href('/arthur.jpg')} alt="Portrait en noir et blanc d’Arthur, de profil, moustache, anneaux aux oreilles et serpent tatoué dans le cou" width="480" height="480" />
     <div>
@@ -15,6 +18,12 @@ import { href } from '../lib/content';
     <p class="lead">Je laisse mes émotions et mes ressentis me guider.</p>
     <p class="text">Ici, je partage mes avis, analyses et autres critiques sur les œuvres que je regarde, lis ou écoute. Mon objectif est de garder une trace des marques qu’elles laissent dans mon esprit. Rechercher les informations pour remplir les fiches des différentes réalisations me permet également de m’intéresser un peu plus à chacune d’entre elles et de ne pas être dans une bête consommation de contenus.</p>
     <p class="signoff" lang="en">Godspeed</p>
+    <p class="elsewhere">
+      <a class="pill" href={site.instagram.url} rel="me">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.25" cy="6.75" r="0.6" fill="currentColor" /></svg>
+        <span><span class="visually-hidden">Instagram : </span>@{site.instagram.handle}</span>
+      </a>
+    </p>
   </div>
 </Base>
 
@@ -32,4 +41,8 @@ import { href } from '../lib/content';
   /* Mot de la fin en signature : italique de Newsreader à grande taille optique, plus fine. */
   .signoff { margin: 2rem 0 0; font-size: 1.5rem; font-style: italic; font-weight: 300;
     font-variation-settings: 'opsz' 48; line-height: 1; }
+  .elsewhere { margin: 2rem 0 0; }
+  .elsewhere .pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; font-size: 0.85rem; }
+  /* Glyphe Instagram au trait, à la couleur de la pastille. */
+  .elsewhere svg { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor; stroke-width: 2; }
 </style>

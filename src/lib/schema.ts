@@ -34,6 +34,12 @@ export function workSchema(work: Work, origin: URL) {
   };
 }
 
+/** L'auteur du site, relié à son compte Instagram. */
+const author = (origin: URL) => ({ '@type': 'Person', name: site.author, url: absolute('/a-propos/', origin), sameAs: [site.instagram.url] });
+
+/** Page À propos : profil de l'auteur. */
+export const aboutPageSchema = (origin: URL) => ({ '@context': 'https://schema.org', '@type': 'ProfilePage', mainEntity: author(origin) });
+
 /** Fiche d'œuvre. */
 export const workPageSchema = (work: Work, origin: URL) => ({ '@context': 'https://schema.org', ...workSchema(work, origin) });
 
@@ -48,7 +54,7 @@ export function reviewSchema(log: Log, work: Work, season: Season | undefined, o
     '@type': 'Review',
     url: absolute(`/journal/${log.id}/`, origin),
     inLanguage: 'fr',
-    author: { '@type': 'Person', name: site.author, url: absolute('/a-propos/', origin) },
+    author: author(origin),
     datePublished: l.date ? isoDate(l.date, l.datePrecision) : day(l.started!),
     itemReviewed: season
       ? { '@type': 'TVSeason', name: season.title || `Saison ${season.number}`, seasonNumber: season.number, numberOfEpisodes: season.episodes, partOfSeries: item }

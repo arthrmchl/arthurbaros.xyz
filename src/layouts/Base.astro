@@ -77,7 +77,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     </header>
     <main><slot /></main>
     <footer class="site-footer">
-      <a href={href('/genres/')}>Genres</a><span class="sep">·</span><a href={href('/rss.xml')}>Flux RSS</a>
+      <a href={href('/genres/')}>Genres</a><span class="sep">·</span><a href={href('/rss.xml')}>Flux RSS</a><span class="sep">·</span><a href={site.instagram.url} rel="me">Instagram</a>
     </footer>
   </body>
 </html>
