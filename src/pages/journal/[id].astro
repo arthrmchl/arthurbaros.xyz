@@ -17,6 +17,9 @@ const isFilm = w.type === 'film';
 const isLivre = w.type === 'livre';
 const ongoing = inProgress(l);
 const years = fmtYears(w);
+// À côté du titre : la période de diffusion de la saison si elle est connue, sinon celle de la série.
+const seasonName = season && seasonLabel(season);
+const shownYears = season?.firstAired ? fmtYears({ ...w, firstAired: season.firstAired, lastAired: season.lastAired }) : years;
 const poster = season?.poster ?? w.poster;
 
 // Quand : « Vu le … » pour un film ; pour un livre ou une saison, début et fin (la fin peut manquer).
@@ -35,7 +38,7 @@ const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.tit
 
 // Titre de l'aperçu : « Review de Titre (année) · ★★★☆☆ », sans note pour une lecture en cours.
 const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
-const shareTitle = `Review de ${w.title}${seasonSuffix(season)} (${years})${stars ? ` · ${stars}` : ''}`;
+const shareTitle = `Review de ${w.title}${seasonSuffix(season)} (${shownYears})${stars ? ` · ${stars}` : ''}`;
 
 // Informations sur le passage, affichées en pastilles sous le texte.
 const pills = (!isLivre
@@ -53,7 +56,7 @@ const pills = (!isLivre
     ]
 ).filter(Boolean).map((v) => (v as string).toLowerCase());
 ---
-<Base title={`Review de ${w.title}${seasonSuffix(season)} (${years}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
+<Base title={`Review de ${w.title}${seasonSuffix(season)} (${shownYears}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
   noindex={!hasText(log)} jsonLd={reviewSchema(log, work, season, Astro.site!)}
   image={backdropImage(w.backdrop) ?? (isLivre ? undefined : poster)} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
@@ -71,14 +74,13 @@ const pills = (!isLivre
     <div class="info">
       <header>
         <div class="title-line">
-          <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a></h1> <span class="meta">{years}</span>
+          <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a>{seasonName && <><span class="sep">·</span>{seasonName}</>}</h1> <span class="meta">{shownYears}</span>
         </div>
-        {season && seasonLabel(season) && <p class="season">{seasonLabel(season)}</p>}
         {!isFilm && <p class="meta">de <People names={w.creators} /></p>}
         {l.rating !== undefined
           ? <p class="rating-big"><Stars rating={l.rating} type={w.type} /></p>
           : (ongoing || l.abandoned) && <p class="ongoing" style={`--accent: var(--${w.type})`}>
-              {l.abandoned ? abandonedLabel(season) : season ? <>Saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}
+              {l.abandoned ? abandonedLabel(season) : season ? <>saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}
             </p>}
         <p class="meta">{when}</p>
       </header>
@@ -115,7 +117,6 @@ const pills = (!isLivre
   h1 a { text-decoration: none; }
   h1 a:hover { text-decoration: underline; }
   .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
-  .season { margin: 0.2rem 0 0; font: 600 1rem var(--sans); color: var(--serie); }
   /* Lecture ou saison en cours, entrée abandonnée : à la place des étoiles, aux couleurs du type d'œuvre. */
   .ongoing { display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
     font: 600 0.8rem/1.6 var(--sans); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
