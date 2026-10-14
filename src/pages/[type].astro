@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import WorkGrid from '../components/WorkGrid.astro';
-import { getJournal, inProgress, latestByWork, todoLabel } from '../lib/content';
+import { byRelease, getJournal, inProgress, latestByWork, todoLabel } from '../lib/content';
 
 export function getStaticPaths() {
   return [
@@ -13,14 +13,16 @@ export function getStaticPaths() {
 }
 const { kind, title } = Astro.props;
 const entries = (await getJournal()).filter(({ work }) => work.data.type === kind);
-// Une seule fois par œuvre, de la plus récente à la plus ancienne (le journal est déjà trié).
+// Une seule fois par œuvre, de la sortie la plus récente à la plus ancienne.
 // Pour un livre ou une série, l'entrée la plus récente dit s'il est en cours de lecture ou de visionnage.
-const works = latestByWork(entries).map(({ log, work }) => ({ work, reading: inProgress(log.data) }));
+const works = latestByWork(entries)
+  .map(({ log, work }) => ({ work, reading: inProgress(log.data) }))
+  .sort((a, b) => byRelease(a.work, b.work));
 const seen = new Set(works.map(({ work }) => work.id));
-// Fiches sans aucune entrée de journal : œuvres à lire / à voir, par ordre alphabétique.
+// Fiches sans aucune entrée de journal : œuvres à lire / à voir, elles aussi par date de sortie.
 const todo = (await getCollection('works'))
   .filter((w) => w.data.type === kind && !seen.has(w.id))
-  .sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr'));
+  .sort(byRelease);
 const reading = works.filter((w) => w.reading).length;
 const done = works.length - reading;
 const noun = { film: ['film', 'films'], livre: ['livre', 'livres'], serie: ['série', 'séries'] }[kind];

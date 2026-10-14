@@ -219,6 +219,17 @@ export const workItems = (works: CollectionEntry<'works'>[], journal: { work: { 
     ...works.filter((w) => !seen.has(w.id)).sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr')).map((work) => ({ work, rating: undefined })),
   ];
 };
+/**
+ * Tri par date de sortie (publication, début de diffusion), de la plus récente à la plus ancienne, puis par titre.
+ * Une date imprécise (`2026`, `2026-10`) passe après les dates plus précises de la même année ou du même mois.
+ */
+export const byRelease = (a: CollectionEntry<'works'>, b: CollectionEntry<'works'>) => {
+  const key = ({ data: w }: CollectionEntry<'works'>) => {
+    const r = w.released ?? (w.firstAired && { year: w.firstAired.getUTCFullYear(), month: w.firstAired.getUTCMonth() + 1, day: w.firstAired.getUTCDate() });
+    return r ? r.year * 10000 + (r.month ?? 0) * 100 + (r.day ?? 0) : -Infinity;
+  };
+  return key(b) - key(a) || a.data.title.localeCompare(b.data.title, 'fr');
+};
 /** Années du journal, de la plus récente à la plus ancienne. */
 export const journalYears = (journal: { log: { data: Parameters<typeof logDate>[0] } }[]) =>
   [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
