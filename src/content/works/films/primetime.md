@@ -3,7 +3,7 @@ title: "Primetime"
 originalTitle: "Primetime"
 type: film
 creators: ["Lance Oppenheim"]
-released: 2026
+released: 2026-09-23
 runtime: 110
 poster: "https://image.tmdb.org/t/p/w500/f79TzZ113lrN5HaBrD07IgvFzcQ.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/mbnopFljGL3UIkSC22uQap4y5ah.jpg"

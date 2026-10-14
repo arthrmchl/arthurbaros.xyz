@@ -3,7 +3,7 @@ title: "Fievel et le nouveau monde"
 originalTitle: "An American Tail"
 type: film
 creators: ["Don Bluth"]
-released: 1986
+released: 1986-11-21
 runtime: 80
 poster: "https://image.tmdb.org/t/p/w500/wjhUy9af89vc9CviKcPgTNTrmIq.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/uyXBAHTMt73KYyqhJkMCzcMH75M.jpg"

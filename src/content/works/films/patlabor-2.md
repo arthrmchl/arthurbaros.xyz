@@ -3,7 +3,7 @@ title: "Patlabor 2"
 originalTitle: "機動警察パトレイバー 2 the Movie"
 type: film
 creators: ["Mamoru Oshii"]
-released: 1993
+released: 1993-08-14
 runtime: 113
 poster: "https://image.tmdb.org/t/p/w500/5LNUJJaKAaM1Jk3FyphZyTbZyDO.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/5eOmIrj3rXfXSJcQUxO9HzsxSBA.jpg"

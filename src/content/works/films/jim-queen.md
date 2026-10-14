@@ -2,7 +2,7 @@
 title: "Jim Queen"
 type: film
 creators: ["Marco Nguyen", "Nicolas Athané"]
-released: 2026
+released: 2026-06-17
 runtime: 85
 poster: "https://image.tmdb.org/t/p/w500/nvmGrOzolKlW1z90rLudSjPm9cG.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/1WcUj5oKWYuiGcIvTWYFU8D5jsf.jpg"

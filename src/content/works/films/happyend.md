@@ -3,7 +3,7 @@ title: "Happyend"
 originalTitle: "HAPPYEND"
 type: film
 creators: ["Neo Sora"]
-released: 2024
+released: 2024-10-04
 runtime: 113
 poster: "https://image.tmdb.org/t/p/w500/zrGO2yfZ6TpfOynpDDupW04i3y2.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/jA6SFkelicQR6q9waYdQRsWQowS.jpg"

@@ -3,7 +3,7 @@ title: "Flow, le chat qui n'avait plus peur de l'eau"
 originalTitle: "Straume"
 type: film
 creators: ["Gints Zilbalodis"]
-released: 2024
+released: 2024-08-29
 runtime: 85
 poster: "https://image.tmdb.org/t/p/w500/5S4pvKFj2bT0PcFNLidnAWocsKU.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/83y6O9P1cXJjzPqqFwpCjsa3zof.jpg"

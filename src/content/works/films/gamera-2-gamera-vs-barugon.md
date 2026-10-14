@@ -3,7 +3,7 @@ title: "Gamera 2 - Gamera vs Barugon"
 originalTitle: "大怪獣決闘 ガメラ対バルゴン"
 type: film
 creators: ["Shigeo Tanaka"]
-released: 1969-12-31
+released: 1966-04-17
 runtime: 106
 poster: "https://image.tmdb.org/t/p/original/sdN6ZfjiI7uP6Fp49jwcIN4LOos.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/5dfCI6Qltwq0w2stre4CPJaQWk6.jpg"

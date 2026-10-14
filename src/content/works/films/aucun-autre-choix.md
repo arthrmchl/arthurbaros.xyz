@@ -3,7 +3,7 @@ title: "Aucun autre choix"
 originalTitle: "어쩔수가없다"
 type: film
 creators: ["Park Chan-Wook"]
-released: 2025
+released: 2025-09-24
 runtime: 139
 poster: "https://image.tmdb.org/t/p/w500/9w7WGjQes0Cs0s4U3Qr09Tg1Sra.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/4g4bFrZayZoEMH4vr2fNF8ObPzU.jpg"
