@@ -28,7 +28,7 @@ const rows = entries.map((e) => {
     // Série : « Titre · Saison 2 », sans la saison quand la série n'en a qu'une.
     const seasonName = season && seasonLabel(season);
     return (
-      <li>
+      <li data-month={precision === 'year' ? undefined : d.getUTCMonth() + 1}>
         <time class="date" datetime={isoDate(d, precision)}>
           <span class="month">{month}</span>
           {day && <span class="day">{day}</span>}
@@ -61,6 +61,7 @@ const rows = entries.map((e) => {
   .entries { list-style: none; padding: 0; margin: 1.5rem 0; }
   .entries li { display: grid; grid-template-columns: 3rem 2.75rem 1fr 4.5rem 6.5rem 1.25rem 1.25rem; gap: 0 1.25rem; align-items: center;
     padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  .entries li[hidden] { display: none; }
   /* Jour en grand, mois en étiquette au-dessus. */
   .date { display: flex; flex-direction: column; align-items: center; font-family: var(--sans); line-height: 1; }
   .month { font: 600 0.7rem var(--sans); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }

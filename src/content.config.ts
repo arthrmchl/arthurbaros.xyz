@@ -37,31 +37,41 @@ const periodEnd = (d: Date, precision: DatePrecision) =>
   precision === 'day' ? d
   : new Date(Date.UTC(d.getUTCFullYear(), precision === 'year' ? 12 : d.getUTCMonth() + 1, 0));
 
-// Saison d'une série : `episodes` est un nombre d'épisodes, ou la liste de leurs titres.
+// Un champ inconnu (faute de frappe, ancien nom comme `director` ou `cover`) fait échouer le build plutôt que d'être ignoré.
+const strict: z.ZodErrorMap = (issue, ctx) => issue.code === 'unrecognized_keys'
+  ? { message: `Champ inconnu : ${issue.keys.map((k) => `\`${k}\``).join(', ')}. Vérifie son nom (modèles dans src/content/templates/).` }
+  : { message: ctx.defaultError };
+
+// Épisode d'une saison : son titre, ou `{ title, runtime }` pour préciser sa durée en minutes
+// (`{ runtime: 47 }` pour un épisode sans titre).
+const episode = z.union([
+  z.string().nullable().transform((title) => ({ title: title || undefined, runtime: undefined })),
+  z.object({ title: optional(z.string()), runtime: optional(z.number().int().positive()) }, { errorMap: strict })
+    .strict()
+    .transform(({ title, runtime }) => ({ title: title || undefined, runtime })),
+]);
+
+// Saison d'une série : `episodes` est un nombre d'épisodes, ou la liste de ses épisodes (titres et durées).
 const season = z
   .object({
     number: z.number().int().positive().optional(), // numéro (par défaut : position dans la liste)
     title: optional(z.string()),                     // nom de la saison, s'il y en a un
     firstAired: optional(z.coerce.date()),           // début de diffusion
     lastAired: optional(z.coerce.date()),            // fin de diffusion (vide si en cours)
-    episodes: z.union([z.number().int().positive(), z.array(z.string().nullable()).nonempty()]),
+    episodes: z.union([z.number().int().positive(), z.array(episode).nonempty()]),
     poster: optional(z.string()),                    // affiche de la saison : URL ou chemin dans /public
   })
   .transform(({ episodes, ...s }) => ({
     ...s,
     episodes: typeof episodes === 'number' ? episodes : episodes.length,
-    titles: typeof episodes === 'number' ? [] : episodes.map((t) => t || undefined),
+    titles: typeof episodes === 'number' ? [] : episodes.map((e) => e.title),
+    runtimes: typeof episodes === 'number' ? [] : episodes.map((e) => e.runtime), // durées en minutes, par épisode
   }));
 
 // Genre d'une fiche : dans la liste fermée de src/lib/genres.ts.
 const genre = z.string().refine((g): g is Genre => (genres as readonly string[]).includes(g), (g) => ({
   message: `Genre inconnu : « ${g} ». Genres possibles : ${genres.join(', ')} (liste dans src/lib/genres.ts).`,
 }));
-
-// Un champ inconnu (faute de frappe, ancien nom comme `director` ou `cover`) fait échouer le build plutôt que d'être ignoré.
-const strict: z.ZodErrorMap = (issue, ctx) => issue.code === 'unrecognized_keys'
-  ? { message: `Champ inconnu : ${issue.keys.map((k) => `\`${k}\``).join(', ')}. Vérifie son nom (modèles dans src/content/templates/).` }
-  : { message: ctx.defaultError };
 
 // Fiche d'œuvre : stable, une seule par film, livre ou série.
 const works = defineCollection({

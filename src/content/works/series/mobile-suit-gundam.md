@@ -13,47 +13,47 @@ seasons:
     firstAired: 1979-04-07
     lastAired: 1980-01-26
     episodes:
-      - "Gundam Rising"
-      - "Destroy Gundam!"
-      - "Vote to Attack"
-      - "Escape From Luna II"
-      - "Re-Entry to Earth"
-      - "Garma Strikes"
-      - "The Core Fighter's Escape"
-      - "Winds of War"
-      - "Fly, Gundam!"
-      - "Garma's Fate"
-      - "Icelina- Love's Remains"
-      - "The Treat of Zeon"
-      - "Coming Home"
-      - "Time, Be Still"
-      - "Cucuruz Doan's Island"
-      - "Sayla's Agony"
-      - "Amuro Deserts"
-      - "Zeon's Secret Mine"
-      - "Ramba Ral's Attack"
-      - "Hand-to-Hand Combat"
-      - "Sorrow and Hatred"
-      - "The Trap of M'Quve"
-      - "Matilda's Resuce"
-      - "Black Tri-Star"
-      - "The Battle of Odessa"
-      - "Char Returns"
-      - "A Spy on Board"
-      - "Accross the Atlantic Ocean"
-      - "Tragedy in Jaburo"
-      - "A Wish of War Orphans"
-      - "A Decoy in Space"
-      - "Breakthrough"
-      - "Farewell in Side Six"
-      - "A Fateful Encounter"
-      - "The Glory of Solomon"
-      - "Big-Zam's Last Stand"
-      - "The Duel in Texas"
-      - "Char and Sayla"
-      - "The Newtype: Challia Bull"
-      - "Lalah's Dilemma"
-      - "A Cosmic Glow"
-      - "Space Fortress: A Baoa Qu"
-      - "Escape"
+      - { title: "Gundam Rising", runtime: 24 }
+      - { title: "Destroy Gundam!", runtime: 24 }
+      - { title: "Vote to Attack", runtime: 24 }
+      - { title: "Escape From Luna II", runtime: 24 }
+      - { title: "Re-Entry to Earth", runtime: 24 }
+      - { title: "Garma Strikes", runtime: 24 }
+      - { title: "The Core Fighter's Escape", runtime: 24 }
+      - { title: "Winds of War", runtime: 24 }
+      - { title: "Fly, Gundam!", runtime: 24 }
+      - { title: "Garma's Fate", runtime: 24 }
+      - { title: "Icelina- Love's Remains", runtime: 24 }
+      - { title: "The Treat of Zeon", runtime: 24 }
+      - { title: "Coming Home", runtime: 24 }
+      - { title: "Time, Be Still", runtime: 24 }
+      - { title: "Cucuruz Doan's Island", runtime: 24 }
+      - { title: "Sayla's Agony", runtime: 24 }
+      - { title: "Amuro Deserts", runtime: 24 }
+      - { title: "Zeon's Secret Mine", runtime: 24 }
+      - { title: "Ramba Ral's Attack", runtime: 24 }
+      - { title: "Hand-to-Hand Combat", runtime: 24 }
+      - { title: "Sorrow and Hatred", runtime: 24 }
+      - { title: "The Trap of M'Quve", runtime: 24 }
+      - { title: "Matilda's Resuce", runtime: 24 }
+      - { title: "Black Tri-Star", runtime: 24 }
+      - { title: "The Battle of Odessa", runtime: 24 }
+      - { title: "Char Returns", runtime: 24 }
+      - { title: "A Spy on Board", runtime: 24 }
+      - { title: "Accross the Atlantic Ocean", runtime: 24 }
+      - { title: "Tragedy in Jaburo", runtime: 24 }
+      - { title: "A Wish of War Orphans", runtime: 24 }
+      - { title: "A Decoy in Space", runtime: 24 }
+      - { title: "Breakthrough", runtime: 24 }
+      - { title: "Farewell in Side Six", runtime: 24 }
+      - { title: "A Fateful Encounter", runtime: 24 }
+      - { title: "The Glory of Solomon", runtime: 24 }
+      - { title: "Big-Zam's Last Stand", runtime: 24 }
+      - { title: "The Duel in Texas", runtime: 24 }
+      - { title: "Char and Sayla", runtime: 24 }
+      - { title: "The Newtype: Challia Bull", runtime: 24 }
+      - { title: "Lalah's Dilemma", runtime: 24 }
+      - { title: "A Cosmic Glow", runtime: 24 }
+      - { title: "Space Fortress: A Baoa Qu", runtime: 24 }
+      - { title: "Escape", runtime: 24 }
 ---

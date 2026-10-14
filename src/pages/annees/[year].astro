@@ -11,14 +11,21 @@ export async function getStaticPaths() {
     props: {
       year,
       entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year),
-      // Épisodes vus pendant l'année, d'après les jours de visionnage (une saison peut chevaucher deux années).
-      episodes: journal.flatMap(({ log }) => log.data.watched)
-        .filter(({ date }) => date.getUTCFullYear() === year)
-        .reduce((n, { episodes }) => n + episodes.length, 0),
+      // Épisodes vus pendant l'année, d'après les jours de visionnage (une saison peut chevaucher deux années),
+      // et leur durée totale en minutes (épisodes dont la durée est renseignée).
+      // Un avis sur une série entière daté de l'année compte tous les épisodes de toutes ses saisons.
+      ...journal.flatMap(({ log, work, season }) => season
+        ? log.data.watched
+          .filter(({ date }) => date.getUTCFullYear() === year)
+          .flatMap(({ episodes }) => episodes.map((n) => season.runtimes[n - 1] ?? 0))
+        : work.data.type === 'serie' && log.data.date?.getUTCFullYear() === year
+          ? work.data.seasons.flatMap((s) => Array.from({ length: s.episodes }, (_, i) => s.runtimes[i] ?? 0))
+          : [])
+        .reduce((t, runtime) => ({ episodes: t.episodes + 1, episodeMinutes: t.episodeMinutes + runtime }), { episodes: 0, episodeMinutes: 0 }),
     },
   }));
 }
-const { year, entries, episodes } = Astro.props;
+const { year, entries, episodes, episodeMinutes } = Astro.props;
 const films = entries.filter((e) => e.work.data.type === 'film').length;
 const livres = entries.filter((e) => e.work.data.type === 'livre').length;
 const series = entries.filter((e) => e.season).length;
@@ -39,7 +46,7 @@ const description = `Bilan ${year} : ${countText}`
 ---
 <Base title={`Bilan ${year} : reviews et critiques de l’année`} description={description}>
   <h1>{year}</h1>
-  <YearStats year={year} entries={entries} episodes={episodes} />
+  <YearStats year={year} entries={entries} episodes={episodes} episodeMinutes={episodeMinutes} />
   <h2>Journal</h2>
   <EntryList entries={entries} />
 </Base>

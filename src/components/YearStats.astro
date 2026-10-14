@@ -1,19 +1,21 @@
 ---
 import { fmtRuntime, capitalize, logDate } from '../lib/content';
 // Bilan chiffré d'une année : une tuile par type d'œuvre et une pour les notes, puis la frise des mois.
-// `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues.
+// `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues,
+// et `episodeMinutes` leur durée totale (épisodes dont la durée est renseignée).
 type Kind = 'film' | 'livre' | 'serie';
 interface Props {
   year: number;
   entries: {
-    work: { data: { type: Kind; runtime?: number } };
-    log: { data: { date?: Date; started?: Date; watched?: { date: Date }[]; rating?: number; abandoned: boolean;
+    work: { data: { type: Kind; runtime?: number; seasons: { number: number }[] } };
+    log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; watched?: { date: Date }[]; rating?: number; abandoned: boolean;
       venue?: 'cinema' | 'maison'; version?: 'vf' | 'vostfr'; accompanied?: boolean; language?: string } };
-    season?: { complete: boolean };
+    season?: { number: number; complete: boolean };
   }[];
   episodes: number;
+  episodeMinutes: number;
 }
-const { year, entries, episodes } = Astro.props;
+const { year, entries, episodes, episodeMinutes } = Astro.props;
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 const count = <T,>(list: T[], test: (x: T) => boolean) => list.filter(test).length;
 /** [« 3 au cinéma », « 2 à la maison »], sans les catégories vides : une ligne, affichée avec des points médians. */
@@ -22,6 +24,12 @@ const split = (parts: [number, string, string?][]) => parts.filter(([n]) => n > 
 const films = entries.filter((e) => e.work.data.type === 'film').map((e) => ({ ...e.log.data, runtime: e.work.data.runtime }));
 const minutes = films.reduce((sum, f) => sum + (f.runtime ?? 0), 0);
 const seasons = entries.filter((e) => e.season);
+// Saisons terminées : celles suivies jusqu'au bout, plus toutes les saisons d'une série vue en entier (avis sur la série).
+const seasonsDone = count(seasons, (e) => Boolean(e.season?.complete))
+  + entries.filter((e) => e.work.data.type === 'serie' && !e.season).reduce((n, e) => n + e.work.data.seasons.length, 0);
+// Séries terminées : vues en entier (avis sur la série) ou dont la dernière saison a été finie ; une série ne compte qu'une fois.
+const seriesDone = new Set(entries.filter((e) => e.work.data.type === 'serie'
+  && (e.season ? e.season.complete && e.season.number === e.work.data.seasons.at(-1)?.number : true)).map((e) => e.work)).size;
 const books = entries.filter((e) => e.work.data.type === 'livre').map((e) => e.log.data);
 const booksRead = count(books, (b) => Boolean(b.date) && !b.abandoned);
 const languages = Object.entries(Object.groupBy(books.filter((b) => b.language), (b) => b.language!))
@@ -42,7 +50,8 @@ const tiles = [
   (episodes > 0 || seasons.length > 0) && {
     kind: 'serie', value: episodes, label: episodes > 1 ? 'épisodes vus' : 'épisode vu',
     lines: [
-      split([[count(seasons, (e) => Boolean(e.season?.complete)), 'saison terminée', 'saisons terminées'],
+      episodeMinutes > 0 && [`${fmtRuntime(episodeMinutes)} de série`],
+      split([[seasonsDone, 'saison terminée', 'saisons terminées'], [seriesDone, 'série terminée', 'séries terminées'],
         [count(seasons, (e) => !e.log.data.date), 'en cours'], [count(seasons, (e) => e.log.data.abandoned), 'abandonnée', 'abandonnées']]),
     ],
   },
@@ -62,19 +71,21 @@ const maxRating = Math.max(1, ...histogram.map((h) => h.n));
 const avg = ratings.length ? (ratings.reduce((s, r) => s + r, 0) / ratings.length).toFixed(1).replace('.', ',') : undefined;
 
 // Frise des mois : les entrées rangées au mois de leur date dans le journal (logDate), empilées par type.
+// Une entrée datée de l'année seulement (`2026`) n'a pas de mois : elle reste hors de la frise.
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const KINDS: { kind: Kind; one: string; many: string }[] = [
   { kind: 'film', one: 'film', many: 'films' }, { kind: 'serie', one: 'série', many: 'séries' }, { kind: 'livre', one: 'livre', many: 'livres' },
 ];
-const kinds = KINDS.filter(({ kind }) => entries.some((e) => e.work.data.type === kind));
+const dated = entries.filter((e) => e.log.data.datePrecision !== 'year');
+const kinds = KINDS.filter(({ kind }) => dated.some((e) => e.work.data.type === kind));
 // Année en cours (à la date du build) : les mois à venir sont dessinés à part, pour ne pas passer pour des mois vides.
 const now = new Date();
 const lastMonth = year === now.getUTCFullYear() ? now.getUTCMonth() : 11;
 const months = MONTHS.map((name, m) => {
-  const inMonth = entries.filter((e) => logDate(e.log.data).getUTCMonth() === m);
+  const inMonth = dated.filter((e) => logDate(e.log.data).getUTCMonth() === m);
   const parts = kinds.map((k) => ({ ...k, n: count(inMonth, (e) => e.work.data.type === k.kind) }));
-  return { name, short: SHORT[m], total: inMonth.length, parts, future: m > lastMonth };
+  return { month: m + 1, name, short: SHORT[m], total: inMonth.length, parts, future: m > lastMonth };
 });
 const maxMonth = Math.max(1, ...months.map((m) => m.total));
 ---
@@ -89,7 +100,7 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
         </div>
         <div class="body">
           {(t.lines.filter((l) => l && l.length > 0) as string[][]).map((parts) => (
-            <p class="meta">{parts.map((part, i) => <>{i > 0 && <span class="sep">·</span>}<span class="part">{i === 0 ? capitalize(part) : part}</span></>)}</p>
+            <p class="meta parts">{parts.map((part, i) => <span class="part"><span class="sep">·</span>{i === 0 ? capitalize(part) : part}</span>)}</p>
           ))}
         </div>
       </div>
@@ -122,9 +133,9 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
       Mois par mois<span class="sep">·</span>{kinds.map((k) => <span class="key" style={`--accent: var(--${k.kind})`}>{k.many}</span>)}
     </figcaption>
     <ol class="months">
-      {months.map((m) => (
-        <li class:list={{ future: m.future }}
-          title={m.future ? undefined : `${capitalize(m.name)} : ${m.total ? m.parts.filter((p) => p.n).map((p) => plural(p.n, p.one, p.many)).join(', ') : 'rien'}`}>
+      {months.map((m) => {
+        const title = m.future ? undefined : `${capitalize(m.name)} : ${m.total ? m.parts.filter((p) => p.n).map((p) => plural(p.n, p.one, p.many)).join(', ') : 'rien'}`;
+        const bar = <>
           <span class="count">{m.total > 0 && m.total}</span>
           {m.total > 0 && (
             <span class="stack" style={`--h: ${m.total / maxMonth}`}>
@@ -132,11 +143,30 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
             </span>
           )}
           <span class="axis"><span class="short" aria-hidden="true">{m.short}</span><span class="letter" aria-hidden="true">{m.name[0].toUpperCase()}</span><span class="visually-hidden">{m.name}</span></span>
-        </li>
-      ))}
+        </>;
+        // Un mois non vide est un bouton : il filtre le journal en dessous sur ce mois ; un second clic retire le filtre.
+        return (
+          <li class:list={{ future: m.future }} title={m.total > 0 ? undefined : title}>
+            {m.total > 0 ? <button type="button" data-month={m.month} aria-pressed="false" title={title}>{bar}</button> : bar}
+          </li>
+        );
+      })}
     </ol>
   </figure>
 </section>
+
+<script>
+  // Filtre du journal par mois : les lignes de EntryList portent `data-month` (absent pour une date à l'année près).
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.months button[data-month]');
+  const rows = document.querySelectorAll<HTMLElement>('.entries > li');
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      const on = button.getAttribute('aria-pressed') !== 'true';
+      for (const b of buttons) b.setAttribute('aria-pressed', String(on && b === button));
+      for (const row of rows) row.hidden = on && row.dataset.month !== button.dataset.month;
+    });
+  }
+</script>
 
 <style>
   .stats { margin: 2rem 0 1rem; }
@@ -149,7 +179,12 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   .value .unit { font-size: 0.5em; font-weight: 500; color: var(--muted); }
   .tile .label { margin: 0.2rem 0 0.5rem; font: 600 0.95rem var(--sans); color: var(--accent); }
   .tile .meta + .meta { margin-top: 0.15rem; }
+  /* Parties séparées par un point médian, chacune d'un bloc. Chaque partie porte son point devant elle ; la ligne est décalée
+     de la largeur d'un point vers la gauche et rognée, pour que le point d'une partie en début de ligne (la première, ou
+     celle renvoyée à la ligne) disparaisse : pas de point orphelin en fin ni en début de ligne. */
+  .tile .parts { display: flex; flex-wrap: wrap; margin-left: -1.3em; clip-path: inset(0 0 0 1.3em); }
   .part { white-space: nowrap; }
+  .parts .sep { display: inline-block; width: 1.3em; margin: 0; text-align: center; }
 
   .count { font: 600 0.75rem var(--sans); font-variant-numeric: tabular-nums; color: var(--muted); }
   .axis { width: 100%; padding-top: 0.25rem; border-top: 1px solid var(--line); text-align: center; font: 0.8rem var(--sans); color: var(--muted); }
@@ -171,7 +206,13 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   .stack { display: flex; flex-direction: column-reverse; gap: 1px; width: min(70%, 2.25rem); height: calc(var(--h) * 5.5rem); margin-top: 0.15rem;
     border-radius: 3px 3px 0 0; overflow: hidden; }
   .seg { flex: var(--n) 1 0; background: var(--accent); }
+  .months button { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;
+    padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+  .months button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
   .months li:hover .stack { filter: brightness(1.15); }
+  /* Mois sélectionné : les autres piles s'effacent, son libellé passe en gras. */
+  .months:has([aria-pressed='true']) button:not([aria-pressed='true']) .stack { opacity: 0.35; }
+  .months [aria-pressed='true'] .axis { color: var(--ink); font-weight: 600; border-top-color: var(--ink); }
   .months .future .axis { border-top-style: dashed; opacity: 0.6; }
   .letter { display: none; }
 

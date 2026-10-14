@@ -16,7 +16,7 @@ seasons:
   - title: ""
     firstAired:
     lastAired:
-    episodes:        # …ou la liste de leurs titres
-      - ""
-      - ""
+    episodes:        # …ou la liste de leurs titres, avec leur durée en minutes si tu la connais
+      - { title: "", runtime: }
+      - { title: "", runtime: }
 ---

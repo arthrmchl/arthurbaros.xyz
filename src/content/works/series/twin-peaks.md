@@ -12,39 +12,39 @@ seasons:
   - firstAired: 1990-04-08
     lastAired: 1990-05-23
     episodes:
-      - "Pilot"
-      - "Traces to Nowhere"
-      - "Zen, or the Skill to Catch a Killer"
-      - "Rest in Pain"
-      - "The One-Armed Man"
-      - "Cooper's Dreams"
-      - "Realization Time"
-      - "The Last Evening"
+      - { title: "Pilote", runtime: 91 }
+      - { title: "Des traces qui ne mènent nulle part", runtime: 45 }
+      - { title: "Comment attraper un tueur", runtime: 47 }
+      - { title: "Repose dans la douleur", runtime: 45 }
+      - { title: "Le manchot", runtime: 45 }
+      - { title: "Les rêves de Cooper", runtime: 45 }
+      - { title: "Prise de conscience", runtime: 45 }
+      - { title: "La dernière soirée", runtime: 45 }
   - firstAired: 1990-09-30
     lastAired: 1991-06-10
     episodes:
-      - "May the Giant Be with You"
-      - "Coma"
-      - "The Man Behind the Glass"
-      - "Laura's Secret Diary"
-      - "The Orchid's Curse"
-      - "Demons"
-      - "Lonely Souls"
-      - "Drive with a Dead Girl"
-      - "Arbitrary Law"
-      - "Dispute Between Brothers"
-      - "Masked Ball"
-      - "The Black Widow"
-      - "Checkmate"
-      - "Double Play"
-      - "Slaves and Masters"
-      - "The Condemned Woman"
-      - "Wounds and Scars"
-      - "On the Wings of Love"
-      - "Variations on Relations"
-      - "The Path to the Black Lodge"
-      - "Miss Twin Peaks"
-      - "Beyond Life and Death"
+      - { title: "Que le géant soit avec vous", runtime: 91 }
+      - { title: "Coma", runtime: 45 }
+      - { title: "L'homme derrière la vitre", runtime: 46 }
+      - { title: "Le journal de Laura", runtime: 45 }
+      - { title: "La malédiction de l'orchidée", runtime: 46 }
+      - { title: "Démons", runtime: 46 }
+      - { title: "Âmes solitaires", runtime: 46 }
+      - { title: "Conduite avec une jeune femme morte", runtime: 46 }
+      - { title: "Loi arbitraire", runtime: 45 }
+      - { title: "Dispute entre frêres", runtime: 46 }
+      - { title: "Bal masqué", runtime: 46 }
+      - { title: "La veuve noire", runtime: 45 }
+      - { title: "Echec et mat", runtime: 45 }
+      - { title: "Double jeu", runtime: 45 }
+      - { title: "Maîtres et esclaves", runtime: 45 }
+      - { title: "La femme condamnée", runtime: 46 }
+      - { title: "Blessures et cicatrices", runtime: 45 }
+      - { title: "Les ailes de l'amour", runtime: 45 }
+      - { title: "Variations sur les relations", runtime: 45 }
+      - { title: "Le chemin vers la loge noire", runtime: 45 }
+      - { title: "Miss Twin Peaks", runtime: 45 }
+      - { title: "Au-delà de la vie et de la mort", runtime: 49 }
   - title: "Twin Peaks: The Return"
     firstAired: 2017-05-21
     lastAired: 2017-09-03
