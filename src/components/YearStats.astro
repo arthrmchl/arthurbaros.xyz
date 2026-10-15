@@ -125,13 +125,20 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
           {likes > 0 && <p class="meta"><LikeIcon label="" />{plural(likes, ...LIKES)}</p>}
           <!-- Une barre par note ; le nombre est écrit au-dessus, la liste reste lisible sans les barres. -->
           <ol class="bars">
-            {histogram.map(({ rating, n, liked }) => (
-              <li title={`${plural(n, 'entrée notée', 'entrées notées')} ${rating}/5${liked ? `, dont ${plural(liked, ...LIKES)}` : ''}`}>
+            {histogram.map(({ rating, n, liked }) => {
+              const title = `${plural(n, 'entrée notée', 'entrées notées')} ${rating}/5${liked ? `, dont ${plural(liked, ...LIKES)}` : ''}`;
+              const bar = <>
                 <span class="count">{n}</span>
                 <span class="bar" style={`--h: ${n / maxRating}; --liked: ${n ? liked / n : 0}`} />
                 <span class="axis">{rating}<span aria-hidden="true">★</span><span class="visually-hidden">/5</span></span>
-              </li>
-            ))}
+              </>;
+              // Comme les mois : une note non vide est un bouton qui filtre le journal sur cette note.
+              return (
+                <li title={n > 0 ? undefined : title}>
+                  {n > 0 ? <button type="button" data-rating={rating} aria-pressed="false" title={title}>{bar}</button> : bar}
+                </li>
+              );
+            })}
           </ol>
         </div>
       </div>
@@ -166,15 +173,21 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
 </section>
 
 <script>
-  // Filtre du journal par mois : les lignes de EntryList portent `data-month` (absent pour une date à l'année près).
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.months button[data-month]');
+  // Filtres du journal par mois et par note : les lignes de EntryList portent `data-month` (absent pour une date à l'année près)
+  // et `data-rating` (absent sans note). Un bouton par valeur ; un second clic retire le filtre ; les deux filtres se cumulent.
   const rows = document.querySelectorAll<HTMLElement>('.entries > li');
-  for (const button of buttons) {
-    button.addEventListener('click', () => {
-      const on = button.getAttribute('aria-pressed') !== 'true';
-      for (const b of buttons) b.setAttribute('aria-pressed', String(on && b === button));
-      for (const row of rows) row.hidden = on && row.dataset.month !== button.dataset.month;
-    });
+  const filters = { month: '.months button[data-month]', rating: '.bars button[data-rating]' } as const;
+  const active: Partial<Record<keyof typeof filters, string>> = {};
+  for (const [key, selector] of Object.entries(filters) as [keyof typeof filters, string][]) {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(selector);
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const on = button.getAttribute('aria-pressed') !== 'true';
+        for (const b of buttons) b.setAttribute('aria-pressed', String(on && b === button));
+        active[key] = on ? button.dataset[key] : undefined;
+        for (const row of rows) row.hidden = Object.entries(active).some(([k, v]) => v !== undefined && row.dataset[k] !== v);
+      });
+    }
   }
 </script>
 
@@ -209,6 +222,12 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   /* Cœur dans le texte : posé sur la ligne de base, à la hauteur des majuscules. */
   .ratings .meta :global(.like-icon) { display: inline-block; margin-right: 0.3em; vertical-align: -0.05em; transform: none; }
   .bars li:hover .bar { background: var(--ink); }
+  .bars button, .months button { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;
+    padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+  .bars button:focus-visible, .months button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
+  /* Note sélectionnée : les autres barres s'effacent, son libellé passe en gras. */
+  .bars:has([aria-pressed='true']) button:not([aria-pressed='true']) .bar { opacity: 0.35; }
+  .bars [aria-pressed='true'] .axis { color: var(--ink); font-weight: 600; border-top-color: var(--ink); }
 
   .timeline { margin: 1.5rem 0 0; }
   .key::before { content: ''; display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.3em; border-radius: 50%; background: var(--accent); }
@@ -219,9 +238,6 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   .stack { display: flex; flex-direction: column-reverse; gap: 1px; width: min(70%, 2.25rem); height: calc(var(--h) * 5.5rem); margin-top: 0.15rem;
     border-radius: 3px 3px 0 0; overflow: hidden; }
   .seg { flex: var(--n) 1 0; background: var(--accent); }
-  .months button { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;
-    padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
-  .months button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
   .months li:hover .stack { filter: brightness(1.15); }
   /* Mois sélectionné : les autres piles s'effacent, son libellé passe en gras. */
   .months:has([aria-pressed='true']) button:not([aria-pressed='true']) .stack { opacity: 0.35; }

@@ -29,7 +29,7 @@ const rows = entries.map((e) => {
     // Série : « Titre · Saison 2 », sans la saison quand la série n'en a qu'une.
     const seasonName = season && seasonLabel(season);
     return (
-      <li data-month={precision === 'year' ? undefined : d.getUTCMonth() + 1}>
+      <li data-month={precision === 'year' ? undefined : d.getUTCMonth() + 1} data-rating={log.data.rating}>
         <time class="date" datetime={isoDate(d, precision)}>
           <span class="month">{month}</span>
           {day && <span class="day">{day}</span>}
