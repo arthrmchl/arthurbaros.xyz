@@ -27,7 +27,10 @@ const liked = latestByWork(entries.filter((e) => e.log.data.liked));
 const likedOf = (kind: Kind) => count(liked, (e) => e.work.data.type === kind);
 const split = (parts: [number, string, string?][]) => parts.filter(([n]) => n > 0).map(([n, one, many]) => plural(n, one, many ?? one));
 
-const films = entries.filter((e) => e.work.data.type === 'film').map((e) => ({ ...e.log.data, runtime: e.work.data.runtime }));
+const filmEntries = entries.filter((e) => e.work.data.type === 'film');
+const films = filmEntries.map((e) => ({ ...e.log.data, runtime: e.work.data.runtime }));
+// Films vus : un film revu dans l'année ne compte qu'une fois ; le détail (durée, lieu, version…) compte chaque visionnage.
+const filmsSeen = new Set(filmEntries.map((e) => e.work.id)).size;
 const minutes = films.reduce((sum, f) => sum + (f.runtime ?? 0), 0);
 const seasons = entries.filter((e) => e.season);
 // Saisons terminées : celles suivies jusqu'au bout, plus toutes les saisons d'une série vue en entier (avis sur la série).
@@ -43,7 +46,7 @@ const languages = Object.entries(Object.groupBy(books.filter((b) => b.language),
 
 const tiles = [
   films.length > 0 && {
-    kind: 'film', value: films.length, label: films.length > 1 ? 'films vus' : 'film vu',
+    kind: 'film', value: filmsSeen, label: filmsSeen > 1 ? 'films vus' : 'film vu',
     lines: [
       minutes > 0 && [`${fmtRuntime(minutes)} de film`],
       split([[count(films, (f) => f.venue === 'cinema'), 'au cinéma'], [count(films, (f) => f.venue === 'maison'), 'à la maison']]),
