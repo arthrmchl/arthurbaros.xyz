@@ -2,6 +2,7 @@
 work: le-vertige
 date: 2026-06-19
 rating: 4
+liked: true
 abandoned: false
 repeat: false
 spoilers: false

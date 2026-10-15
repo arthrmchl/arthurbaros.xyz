@@ -2,6 +2,7 @@
 work: fievel-et-le-nouveau-monde
 date: 2026-08-29
 rating: 4
+liked: true
 repeat: true
 spoilers: false
 venue: cinema

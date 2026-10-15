@@ -2,6 +2,7 @@
 work: sous-le-ciel-de-kyoto
 date: 2026-02-03
 rating: 5
+liked: true
 abandoned: false
 repeat: false
 spoilers: true

@@ -2,6 +2,7 @@
 work: gamera-I-gardien-de-l-univers
 date: 2026-07-15
 rating: 3
+liked: true
 abandoned: false
 repeat: false
 spoilers: false

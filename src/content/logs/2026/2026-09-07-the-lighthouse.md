@@ -2,6 +2,7 @@
 work: the-lighthouse
 date: 2026-09-07
 rating: 5
+liked: true
 repeat: false
 spoilers: false
 venue: maison
