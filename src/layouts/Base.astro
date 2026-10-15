@@ -153,7 +153,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   .details > * { margin: 0; }
   /* Point médian entre deux infos : les espaces de la police sans empattement sont trop étroits. */
   .sep { margin: 0 0.4em; }
-  .stars { color: var(--film); letter-spacing: 0.08em; white-space: nowrap; }
+  /* Le ★ vient d'une police de secours ; la police de la ligne fixée, sa position est la même partout (le cœur de like s'y cale). */
+  .stars { color: var(--film); font-family: var(--serif); letter-spacing: 0.08em; white-space: nowrap; }
   .stars.is-livre { color: var(--livre); }
   .stars.is-serie { color: var(--serie); }
 

@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
 import YearStats from '../../components/YearStats.astro';
-import { getJournal, journalYears, logDate } from '../../lib/content';
+import { getJournal, journalYears, latestByWork, logDate } from '../../lib/content';
 
 export async function getStaticPaths() {
   const journal = await getJournal();
@@ -41,8 +41,10 @@ const counts = [
 const countText = counts.length > 2 ? `${counts.slice(0, -1).join(', ')} et ${counts.at(-1)}` : counts.join(' et ');
 const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
 const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
+const likes = latestByWork(entries.filter((e) => e.log.data.liked)).length; // une œuvre aimée deux fois compte une fois
 const description = `Bilan ${year} : ${countText}`
-  + (ratings.length > 0 ? `, note moyenne ${avg.toFixed(1).replace('.', ',')}/5.` : '.');
+  + (ratings.length > 0 ? `, note moyenne ${avg.toFixed(1).replace('.', ',')}/5` : '')
+  + (likes > 0 ? `, ${likes} ${likes > 1 ? 'coups' : 'coup'} de cœur.` : '.');
 ---
 <Base title={`Bilan ${year} : reviews et critiques de l’année`} description={description}>
   <h1>{year}</h1>

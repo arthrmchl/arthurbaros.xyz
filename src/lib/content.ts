@@ -205,17 +205,17 @@ export const latestByWork = <T extends { work: { id: string } }>(journal: T[]) =
   return journal.filter(({ work }) => !seen.has(work.id) && Boolean(seen.add(work.id)));
 };
 /**
- * Œuvres pour une grille d'affiches, avec la dernière note donnée : les plus récemment vues ou lues d'abord,
+ * Œuvres pour une grille d'affiches, avec la dernière note donnée (et son like) : les plus récemment vues ou lues d'abord,
  * puis celles qui n'ont pas encore d'entrée (à voir, à lire) par ordre alphabétique.
  */
-export const workItems = (works: CollectionEntry<'works'>[], journal: { work: { id: string }; log: { data: { rating?: number } } }[]) => {
+export const workItems = (works: CollectionEntry<'works'>[], journal: { work: { id: string }; log: { data: { rating?: number; liked: boolean } } }[]) => {
   const ids = new Set(works.map((w) => w.id));
   const latest = latestByWork(journal.filter(({ work }) => ids.has(work.id)));
   const byId = new Map(works.map((w) => [w.id, w]));
-  const rating = (id: string) => journal.find((e) => e.work.id === id && e.log.data.rating !== undefined)?.log.data.rating;
+  const last = (id: string) => journal.find((e) => e.work.id === id && (e.log.data.rating !== undefined || e.log.data.liked))?.log.data;
   const seen = new Set(latest.map(({ work }) => work.id));
   return [
-    ...latest.map(({ work }) => ({ work: byId.get(work.id)!, rating: rating(work.id) })),
+    ...latest.map(({ work }) => ({ work: byId.get(work.id)!, rating: last(work.id)?.rating, liked: last(work.id)?.liked })),
     ...works.filter((w) => !seen.has(w.id)).sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr')).map((work) => ({ work, rating: undefined })),
   ];
 };

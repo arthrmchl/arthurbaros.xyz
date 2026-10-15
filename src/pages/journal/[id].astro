@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import LikeIcon from '../../components/LikeIcon.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
@@ -36,8 +37,8 @@ const when =
 // Pas de couverture pour un livre : l'aperçu prend l'image du site.
 const shareDescription = l.summary || excerpt(log.body) || `Mon avis sur ${w.title} (${years}), ${/^[aeiouyàâéèêîôû]/i.test(w.creator) ? 'd’' : 'de '}${w.creator}.`;
 
-// Titre de l'aperçu : « Review de Titre (année) · ★★★☆☆ », sans note pour une lecture en cours.
-const stars = l.rating !== undefined ? fmtStars(l.rating) : '';
+// Titre de l'aperçu : « Review de Titre (année) · ★★★☆☆ ♥ », sans note pour une lecture en cours.
+const stars = [l.rating !== undefined && fmtStars(l.rating), l.liked && '♥'].filter(Boolean).join(' ');
 const shareTitle = `Review de ${w.title}${seasonSuffix(season)} (${shownYears})${stars ? ` · ${stars}` : ''}`;
 
 // Informations sur le passage, affichées en pastilles sous le texte.
@@ -77,8 +78,11 @@ const pills = (!isLivre
           <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a>{seasonName && <><span class="sep">·</span>{seasonName}</>}</h1> <span class="meta">{shownYears}</span>
         </div>
         {!isFilm && <p class="meta">de <People names={w.creators} /></p>}
-        {l.rating !== undefined
-          ? <p class="rating-big"><Stars rating={l.rating} type={w.type} /></p>
+        {l.rating !== undefined || l.liked
+          ? <p class="rating-big">
+              {l.rating !== undefined && <Stars rating={l.rating} type={w.type} />}
+              {l.liked && <LikeIcon type={w.type} />}
+            </p>
           : (ongoing || l.abandoned) && <p class="ongoing" style={`--accent: var(--${w.type})`}>
               {l.abandoned ? abandonedLabel(season) : season ? <>saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}
             </p>}
@@ -116,7 +120,7 @@ const pills = (!isLivre
 <style>
   h1 a { text-decoration: none; }
   h1 a:hover { text-decoration: underline; }
-  .rating-big { margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
+  .rating-big { display: flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0 0; font-size: 1.3rem; line-height: 1.2; }
   /* Lecture ou saison en cours, entrée abandonnée : à la place des étoiles, aux couleurs du type d'œuvre. */
   .ongoing { display: inline-block; margin: 0.6rem 0 0; padding: 0.1rem 0.6rem; border-radius: 999px;
     font: 600 0.8rem/1.6 var(--sans); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }

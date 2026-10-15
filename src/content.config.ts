@@ -152,6 +152,7 @@ const logs = defineCollection({
       date: optional(released),                 // date du visionnage / de la fin de lecture (absente si lecture en cours) : `2026`, `2026-10` ou `2026-10-08`
       rating: optional(z.number().int('La note est un nombre entier de 0 à 5.').min(0).max(5)), // absente si lecture en cours
       abandoned: z.boolean().default(false),   // arrêté avant la fin : la `date` est celle de l'arrêt
+      liked: z.boolean().default(false),       // coup de cœur (le « like » de Letterboxd)
       repeat: z.boolean().default(false),      // revisionnage / relecture
       spoilers: z.boolean().default(false),
       venue: z.enum(['cinema', 'maison']).optional(), // lieu du visionnage (films)

@@ -1,14 +1,15 @@
 ---
-import { fmtRuntime, capitalize, logDate } from '../lib/content';
-// Bilan chiffré d'une année : une tuile par type d'œuvre et une pour les notes, puis la frise des mois.
+import LikeIcon from './LikeIcon.astro';
+import { fmtRuntime, capitalize, latestByWork, logDate } from '../lib/content';
+// Bilan chiffré d'une année : une tuile par type d'œuvre et une pour les notes (avec les coups de cœur), puis la frise des mois.
 // `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues,
 // et `episodeMinutes` leur durée totale (épisodes dont la durée est renseignée).
 type Kind = 'film' | 'livre' | 'serie';
 interface Props {
   year: number;
   entries: {
-    work: { data: { type: Kind; runtime?: number; seasons: { number: number }[] } };
-    log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; watched?: { date: Date }[]; rating?: number; abandoned: boolean;
+    work: { id: string; data: { type: Kind; runtime?: number; seasons: { number: number }[] } };
+    log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; watched?: { date: Date }[]; rating?: number; liked: boolean; abandoned: boolean;
       venue?: 'cinema' | 'maison'; version?: 'vf' | 'vostfr'; accompanied?: boolean; language?: string } };
     season?: { number: number; complete: boolean };
   }[];
@@ -19,6 +20,11 @@ const { year, entries, episodes, episodeMinutes } = Astro.props;
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 const count = <T,>(list: T[], test: (x: T) => boolean) => list.filter(test).length;
 /** [« 3 au cinéma », « 2 à la maison »], sans les catégories vides : une ligne, affichée avec des points médians. */
+const LIKES: [string, string] = ['coup de cœur', 'coups de cœur'];
+// Coups de cœur : une œuvre aimée à plusieurs passages (revisionnage, plusieurs saisons) ne compte qu'une fois,
+// avec son passage aimé le plus récent (le journal va du plus récent au plus ancien).
+const liked = latestByWork(entries.filter((e) => e.log.data.liked));
+const likedOf = (kind: Kind) => count(liked, (e) => e.work.data.type === kind);
 const split = (parts: [number, string, string?][]) => parts.filter(([n]) => n > 0).map(([n, one, many]) => plural(n, one, many ?? one));
 
 const films = entries.filter((e) => e.work.data.type === 'film').map((e) => ({ ...e.log.data, runtime: e.work.data.runtime }));
@@ -44,7 +50,7 @@ const tiles = [
       split([[count(films, (f) => f.version === 'vostfr'), 'en VOSTFR'], [count(films, (f) => f.version === 'vf'), 'en VF']]),
       [count(films, (f) => f.accompanied === false), count(films, (f) => f.accompanied === true)].some((n) => n > 0)
         && [`Seul : ${count(films, (f) => f.accompanied === false)}`, `Accompagné : ${count(films, (f) => f.accompanied === true)}`],
-      split([[count(films, (f) => f.abandoned), 'abandonné', 'abandonnés']]),
+      split([[likedOf('film'), ...LIKES], [count(films, (f) => f.abandoned), 'abandonné', 'abandonnés']]),
     ],
   },
   (episodes > 0 || seasons.length > 0) && {
@@ -53,20 +59,22 @@ const tiles = [
       episodeMinutes > 0 && [`${fmtRuntime(episodeMinutes)} de série`],
       split([[seasonsDone, 'saison terminée', 'saisons terminées'], [seriesDone, 'série terminée', 'séries terminées'],
         [count(seasons, (e) => !e.log.data.date), 'en cours'], [count(seasons, (e) => e.log.data.abandoned), 'abandonnée', 'abandonnées']]),
+      split([[likedOf('serie'), ...LIKES]]),
     ],
   },
   books.length > 0 && {
     kind: 'livre', value: booksRead, label: booksRead > 1 ? 'livres lus' : 'livre lu',
     lines: [
-      split([[count(books, (b) => !b.date), 'en cours'], [count(books, (b) => b.abandoned), 'abandonné', 'abandonnés']]),
+      split([[count(books, (b) => !b.date), 'en cours'], [likedOf('livre'), ...LIKES], [count(books, (b) => b.abandoned), 'abandonné', 'abandonnés']]),
       split(languages),
     ],
   },
 ].filter((t) => t !== false);
 
-// Répartition des notes de 0 à 5, toutes œuvres confondues.
+// Répartition des notes de 0 à 5, toutes œuvres confondues, et la part des coups de cœur dans chaque note (à la note du passage aimé retenu).
 const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
-const histogram = [0, 1, 2, 3, 4, 5].map((r) => ({ rating: r, n: count(ratings, (x) => x === r) }));
+const likes = liked.length;
+const histogram = [0, 1, 2, 3, 4, 5].map((r) => ({ rating: r, n: count(ratings, (x) => x === r), liked: count(liked, (e) => e.log.data.rating === r) }));
 const maxRating = Math.max(1, ...histogram.map((h) => h.n));
 const avg = ratings.length ? (ratings.reduce((s, r) => s + r, 0) / ratings.length).toFixed(1).replace('.', ',') : undefined;
 
@@ -113,12 +121,14 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
         </div>
         <div class="body">
           <p class="meta">Sur {plural(ratings.length, 'note', 'notes')}</p>
+          <!-- Le cœur sert de légende : les coups de cœur forment le bas des barres, en couleur pleine. -->
+          {likes > 0 && <p class="meta"><LikeIcon label="" />{plural(likes, ...LIKES)}</p>}
           <!-- Une barre par note ; le nombre est écrit au-dessus, la liste reste lisible sans les barres. -->
           <ol class="bars">
-            {histogram.map(({ rating, n }) => (
-              <li title={`${plural(n, 'entrée notée', 'entrées notées')} ${rating}/5`}>
+            {histogram.map(({ rating, n, liked }) => (
+              <li title={`${plural(n, 'entrée notée', 'entrées notées')} ${rating}/5${liked ? `, dont ${plural(liked, ...LIKES)}` : ''}`}>
                 <span class="count">{n}</span>
-                <span class="bar" style={`--h: ${n / maxRating}`} />
+                <span class="bar" style={`--h: ${n / maxRating}; --liked: ${n ? liked / n : 0}`} />
                 <span class="axis">{rating}<span aria-hidden="true">★</span><span class="visually-hidden">/5</span></span>
               </li>
             ))}
@@ -192,9 +202,12 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   .bars { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px;
     align-items: end; height: 5rem; }
   .bars li, .months li { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
-  /* Barre fine arrondie en haut, posée sur la ligne de base ; hauteur proportionnelle au nombre de notes. */
+  /* Barre fine arrondie en haut, posée sur la ligne de base ; hauteur proportionnelle au nombre de notes.
+     Les coups de cœur en forment le bas, en couleur pleine. */
   .bar { width: min(70%, 1.75rem); height: calc(var(--h) * 3rem); min-height: 2px; margin-top: 0.15rem; border-radius: 3px 3px 0 0;
-    background: color-mix(in srgb, var(--ink) 55%, transparent); }
+    background: linear-gradient(to top, var(--ink) calc(var(--liked) * 100%), color-mix(in srgb, var(--ink) 40%, transparent) 0); }
+  /* Cœur dans le texte : posé sur la ligne de base, à la hauteur des majuscules. */
+  .ratings .meta :global(.like-icon) { display: inline-block; margin-right: 0.3em; vertical-align: -0.05em; transform: none; }
   .bars li:hover .bar { background: var(--ink); }
 
   .timeline { margin: 1.5rem 0 0; }

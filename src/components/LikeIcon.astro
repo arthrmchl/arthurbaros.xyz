@@ -1,0 +1,18 @@
+---
+// Cœur : l'œuvre a été aimée lors de ce passage (à la Letterboxd), aux couleurs du type d'œuvre.
+// Sans `type`, il prend la couleur `--accent` de son conteneur ; avec `label=""`, il est décoratif (le texte voisin le dit).
+// Taille en `em` : il suit la taille de police des étoiles qu'il accompagne (à lui donner, s'il n'est pas à côté).
+interface Props { type?: 'film' | 'livre' | 'serie'; label?: string }
+const { type, label = 'Aimé' } = Astro.props;
+---
+<svg class="like-icon" viewBox="2 3 20 18.35" style={type && `--accent: var(--${type})`}
+  {...label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': 'true' }}>
+  {label && <title>{label}</title>}
+  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z" />
+</svg>
+
+<style>
+  /* Les étoiles sont des caractères : leur encre est plus haute que le milieu de la ligne (≈ 0,17 em).
+     Le cœur, centré comme une boîte, remonte d'autant pour s'aligner sur elles. */
+  .like-icon { display: block; width: 0.87em; height: 0.8em; fill: var(--accent); transform: translateY(-0.17em); }
+</style>

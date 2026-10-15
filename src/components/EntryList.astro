@@ -1,4 +1,5 @@
 ---
+import LikeIcon from './LikeIcon.astro';
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
 import Stars from './Stars.astro';
@@ -50,6 +51,7 @@ const rows = entries.map((e) => {
           : <span class="stars pending" title={season && !log.data.date ? 'Épisodes vus' : undefined}>
               {log.data.abandoned ? abandonedLabel(season) : log.data.date ? '—' : season ? `${season.seen.size}/${season.episodes}` : 'En cours'}
             </span>}
+        <span class="like">{log.data.liked && <LikeIcon type={type} />}</span>
         <span class="repeat">{log.data.repeat && <RepeatIcon label={repeatLabel[type]} />}</span>
         <span class="review">{log.body?.trim() && <ReviewIcon />}</span>
       </li>
@@ -59,7 +61,7 @@ const rows = entries.map((e) => {
 
 <style>
   .entries { list-style: none; padding: 0; margin: 1.5rem 0; }
-  .entries li { display: grid; grid-template-columns: 3rem 2.75rem 1fr 4.5rem 6.5rem 1.25rem 1.25rem; gap: 0 1.25rem; align-items: center;
+  .entries li { display: grid; grid-template-columns: 3rem 2.75rem 1fr 4.5rem 6.5rem 1.25rem 1.25rem 1.25rem; gap: 0 1.25rem; align-items: center;
     padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
   .entries li[hidden] { display: none; }
   /* Jour en grand, mois en étiquette au-dessus. */
@@ -78,15 +80,17 @@ const rows = entries.map((e) => {
   .entries :global(.stars) { font-size: 1.05rem; }
   /* Lecture en cours : à la place des étoiles. */
   .entries .pending { font: 600 0.9rem var(--sans); letter-spacing: 0; color: var(--ink); }
-  .repeat, .review { display: flex; justify-content: center; }
+  .like, .repeat, .review { display: flex; justify-content: center; }
+  /* Même taille et même hauteur de ligne que les étoiles : le cœur se cale sur elles. */
+  .like { align-items: center; min-height: 1lh; font-size: 1.05rem; }
   .inline-year { display: none; }
 
-  /* Sur téléphone : l'année passe sous le titre, note et revisionnage sous le texte. */
+  /* Sur téléphone : l'année passe sous le titre, note, like et revisionnage sous le texte. */
   @media (max-width: 34rem) {
-    .entries li { grid-template-columns: 2.25rem 2.5rem 1fr auto auto; grid-template-areas: 'date thumb body body body' 'date thumb stars repeat review';
+    .entries li { grid-template-columns: 2.25rem 2.5rem 1fr auto auto auto; grid-template-areas: 'date thumb body body body body' 'date thumb stars like repeat review';
       gap: 0.15rem 0.9rem; align-items: start; }
     .date { grid-area: date; } .thumb { grid-area: thumb; } .body { grid-area: body; }
-    .entries :global(.stars) { grid-area: stars; } .repeat { grid-area: repeat; } .review { grid-area: review; }
+    .entries :global(.stars) { grid-area: stars; } .like { grid-area: like; } .repeat { grid-area: repeat; } .review { grid-area: review; }
     .year { display: none; } .inline-year { display: inline; }
     .day { font-size: 1.35rem; }
     .name { font-size: 1.1rem; }
