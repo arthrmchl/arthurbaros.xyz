@@ -70,7 +70,10 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   <body>
     <header class="site-header">
       <a class="brand" href={href('/')}><svg class="logo" viewBox="4 9 27 14" aria-hidden="true"><circle cx="11" cy="16" r="7" fill="var(--film)" /><rect x="19" y="9" width="7" height="14" rx="1" fill="var(--livre)" /><rect x="27" y="9" width="4" height="4" rx="0.75" fill="var(--serie)" /><rect x="27" y="14" width="4" height="4" rx="0.75" fill="var(--serie)" /><rect x="27" y="19" width="4" height="4" rx="0.75" fill="var(--serie)" /></svg><span>{siteName}</span></a>
-      <nav aria-label="Navigation principale">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">
+        <svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 1h18" /><path d="M1 7h18" /><path d="M1 13h18" /></svg>
+      </button>
+      <nav id="site-nav" aria-label="Navigation principale">
         <a href={href('/journal/')}>Journal</a>
         <a href={href('/films/')}>Films</a>
         <a href={href('/livres/')}>Livres</a>
@@ -79,6 +82,17 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
         <a href={href('/a-propos/')}>À propos</a>
       </nav>
     </header>
+    {/* Menu burger sur petit écran. Sans JavaScript, `data-menu` reste absent : la navigation s'affiche en entier et le bouton est masqué. */}
+    <script is:inline>
+      (() => {
+        const header = document.currentScript.previousElementSibling;
+        const button = header.querySelector('.menu-toggle');
+        const set = (open) => { header.dataset.menu = open ? 'open' : 'closed'; button.setAttribute('aria-expanded', String(open)); };
+        set(false);
+        button.addEventListener('click', () => set(header.dataset.menu !== 'open'));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && header.dataset.menu === 'open') { set(false); button.focus(); } });
+      })();
+    </script>
     <main><slot /></main>
     <footer class="site-footer">
       <a href={href('/genres/')}>Genres</a><span class="sep">·</span><a href={href('/rss.xml')}>Flux RSS</a><span class="sep">·</span><a href={site.instagram.url} rel="me">Instagram</a>
@@ -111,6 +125,22 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   /* Remonte le nom pour que le logo soit à peu près centré sur ses minuscules (hampes et jambages ignorés). */
   .brand span { position: relative; top: -0.05em; }
   .site-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.95rem; }
+  .menu-toggle { display: none; padding: 0.5rem; margin: -0.5rem; border: 0; background: none; color: inherit; cursor: pointer; }
+  .menu-toggle:focus-visible { outline: 2px solid var(--film); outline-offset: 2px; }
+  .menu-toggle svg { display: block; width: 1.25rem; height: 0.875rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+  /* Les trois traits se croisent en ✕ quand le menu est ouvert. */
+  .menu-toggle svg { overflow: visible; }
+  .menu-toggle path { transform-box: view-box; transform-origin: 50% 50%; transition: transform 0.2s, opacity 0.2s; }
+  .site-header[data-menu="open"] .menu-toggle path:nth-child(1) { transform: translateY(6px) rotate(45deg) scaleX(0.85); }
+  .site-header[data-menu="open"] .menu-toggle path:nth-child(2) { opacity: 0; }
+  .site-header[data-menu="open"] .menu-toggle path:nth-child(3) { transform: translateY(-6px) rotate(-45deg) scaleX(0.85); }
+  @media (max-width: 40rem) {
+    .site-header[data-menu] .menu-toggle { display: block; }
+    .site-header[data-menu="closed"] nav { display: none; }
+    /* Liste verticale sous la ligne du nom, sur toute la largeur. */
+    .site-header[data-menu="open"] nav { flex-direction: column; flex-basis: 100%; gap: 0; font-size: 1.05rem; }
+    .site-header[data-menu="open"] nav a { padding: 0.55rem 0; text-decoration: none; border-top: 1px solid var(--line); }
+  }
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
   /* Lu par les lecteurs d'écran et les moteurs de recherche, invisible à l'écran. */
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
