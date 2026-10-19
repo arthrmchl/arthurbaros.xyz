@@ -1,0 +1,33 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import WorkGrid from '../../components/WorkGrid.astro';
+import { excerpt, fmtDate, fmtListCount, getJournal, getLists, href, listTypeLabel, type ListEntry } from '../../lib/content';
+
+export async function getStaticPaths() {
+  const lists = await getLists(await getJournal());
+  return lists.map((entry) => ({ params: { id: entry.list.id }, props: entry }));
+}
+const { list, items } = Astro.props as ListEntry;
+const { Content } = await render(list);
+const l = list.data;
+const count = fmtListCount(items.length, l.type);
+const description = excerpt(list.body) || `${l.ranked ? 'Classement' : 'Liste'} : ${l.title}, ${count}.`;
+// Aperçu lors du partage : l'affiche du premier élément.
+const image = items.find((i) => i.image)?.image;
+---
+<Base title={`Liste : ${l.title}`} shareTitle={l.title} description={description} image={image} imageAlt={image && `Affiche : ${items.find((i) => i.image)!.work.data.title}`}>
+  <p class="meta"><a href={href('/listes/')}>Listes</a></p>
+  <h1 class="list-title">{l.title}</h1>
+  <p class="meta">
+    <span class:list={['pill', l.type ? `is-${l.type}` : 'is-mixte']}>{listTypeLabel[l.type ?? 'mixte']}</span>
+    <span class="sep">·</span>{l.ranked ? `Classement, ${count}` : count}
+    <span class="sep">·</span>{l.updated ? `Mise à jour le ${fmtDate(l.updated)}` : `Créée le ${fmtDate(l.created)}`}
+  </p>
+  {list.body?.trim() && <div class="prose"><Content /></div>}
+  <WorkGrid items={items} />
+</Base>
+
+<style>
+  .list-title { margin-top: 0.5rem; }
+</style>

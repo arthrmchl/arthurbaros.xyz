@@ -186,4 +186,31 @@ const logs = defineCollection({
     .transform((l) => ({ ...l, watched: l.watched.toSorted((a, b) => a.date.getTime() - b.date.getTime()) })),
 });
 
-export const collections = { works, logs };
+// Élément d'une liste : l'identifiant d'une fiche (`oldboy`), ou `{ work, season }` pour une saison précise d'une série.
+const listItem = z.union([
+  reference('works').transform((work) => ({ work, season: undefined })),
+  z.object({ work: reference('works'), season: optional(z.number().int().positive()) }, { errorMap: strict }).strict(),
+]);
+
+// Liste d'œuvres (à la Letterboxd) : réservée à un type de média, ou mixte si `type` est absent.
+// L'ordre de `items` est l'ordre d'affichage ; le texte du fichier sert d'introduction.
+const lists = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/lists', generateId }),
+  schema: z
+    .object({
+      title: z.string(),
+      type: optional(z.enum(['film', 'livre', 'serie'])), // absent : liste mixte
+      ranked: z.boolean().default(false),      // classement numéroté
+      created: z.coerce.date(),                // création de la liste
+      updated: optional(z.coerce.date()),      // dernière mise à jour
+      items: z.array(listItem).nonempty('Ajoute au moins une œuvre dans `items`.'),
+    }, { errorMap: strict })
+    .strict()
+    .superRefine((l, ctx) => {
+      if (l.updated && l.updated < l.created) {
+        ctx.addIssue({ code: 'custom', path: ['updated'], message: '`updated` doit suivre `created`.' });
+      }
+    }),
+});
+
+export const collections = { works, logs, lists };

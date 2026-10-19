@@ -3,26 +3,29 @@ import type { CollectionEntry } from 'astro:content';
 import LikeIcon from './LikeIcon.astro';
 import Poster from './Poster.astro';
 import Stars from './Stars.astro';
-// Grille d'affiches menant aux fiches : pages Films / Livres / Séries, genres et personnes.
+// Grille d'affiches menant aux fiches : pages Films / Livres / Séries, genres, personnes et listes.
 // `rating` : dernière note, affichée sous l'affiche, avec un cœur si ce passage a été aimé (`liked`) ; `badge` : étiquette sur l'affiche (« En cours »).
-interface Props { items: { work: CollectionEntry<'works'>; rating?: number; liked?: boolean; badge?: string }[] }
+// `image` : remplace l'affiche (celle d'une saison) ; `rank` : position dans un classement, devant la note.
+interface Props { items: { work: CollectionEntry<'works'>; rating?: number; liked?: boolean; badge?: string; image?: string; rank?: number }[] }
 const { items } = Astro.props;
 ---
 <ul class="posters">
-  {items.map(({ work, rating, liked, badge }) => rating !== undefined || liked
-    ? <Poster work={work} badge={badge}>
+  {items.map(({ work, rating, liked, badge, image, rank }) => rating !== undefined || liked || rank !== undefined
+    ? <Poster work={work} badge={badge} image={image}>
         <span class="rated">
+          {rank !== undefined && <span class="rank">{rank}</span>}
           {rating !== undefined && <Stars rating={rating} type={work.data.type} />}
           {liked && <LikeIcon type={work.data.type} />}
         </span>
       </Poster>
-    : <Poster work={work} badge={badge} />)}
+    : <Poster work={work} badge={badge} image={image} />)}
 </ul>
 
 <style>
   .posters { list-style: none; padding: 0; margin: 1.5rem 0; display: grid;
     grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem; align-items: end; }
   .rated { display: flex; align-items: center; gap: 0.35rem; }
+  .rank { font: 600 0.85rem var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
   @media (max-width: 34rem) {
     .posters { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
   }

@@ -6,16 +6,22 @@ import Stars from '../../components/Stars.astro';
 import ViewingRow from '../../components/ViewingRow.astro';
 import People from '../../components/People.astro';
 import { workPageSchema } from '../../lib/schema';
-import { getJournal, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, abandonedLabel, imageLabel, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, abandonedLabel, imageLabel, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
+  const lists = await getLists(journal);
   return works.map((work) => ({
     params: { id: work.id },
-    props: { work, entries: journal.filter((e) => e.work.id === work.id) },
+    props: {
+      work,
+      entries: journal.filter((e) => e.work.id === work.id),
+      // Listes où figure l'œuvre (ou une de ses saisons), avec son rang dans un classement.
+      lists: lists.flatMap(({ list, items }) => items.filter((i) => i.work.id === work.id).map(({ season, rank }) => ({ list, season, rank }))),
+    },
   }));
 }
-const { work, entries } = Astro.props;
+const { work, entries, lists } = Astro.props;
 const { Content } = await render(work);
 const w = work.data;
 const years = fmtYears(w);
@@ -153,6 +159,20 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
           ))}
         </ul>
       </>}
+
+  {lists.length > 0 && (
+    <>
+      <h2>Dans mes listes</h2>
+      <ul class="in-lists">
+        {lists.map(({ list, season, rank }) => (
+          <li>
+            <a href={href(`/listes/${list.id}/`)}>{list.data.title}</a>
+            {(rank !== undefined || season) && <span class="meta">{[rank !== undefined && `n° ${rank}`, season && seasonLabel(season)].filter(Boolean).join(' · ')}</span>}
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
 </Base>
 
 <style>
@@ -195,6 +215,11 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
   /* Seule saison : pas de ligne de titre repliable, la liste suit le titre de section. */
   .season.only { border: none; }
   .season.only .season-body { padding-left: 0; }
+
+  /* Listes où figure l'œuvre : titre, puis rang et saison éventuels. */
+  .in-lists { list-style: none; padding: 0; margin: 1rem 0; }
+  .in-lists li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+  .in-lists a { font: 600 1rem var(--sans); }
 
   /* Cinq colonnes ne tiennent pas sur un écran étroit. */
   @media (max-width: 48rem) {

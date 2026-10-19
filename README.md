@@ -38,6 +38,16 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
    - **Avis sur toute la série** : `work`, `date`, `rating` (optionnelle), sans `season`.
 3. `git add . && git commit -m "Review : ..." && git push`
 
+## Listes
+
+Une liste (à la Letterboxd) est un fichier dans `src/content/lists/` (modèle : `templates/liste-template.md`). Son nom de fichier donne son adresse : `lists/recits-de-vengeance.md` → `/listes/recits-de-vengeance/`.
+
+- `title`, `created` (date de création), `items` : les identifiants des fiches, dans l'ordre d'affichage. Pour une saison précise d'une série : `{ work: twin-peaks, season: 2 }`.
+- `type` (`film`, `livre` ou `serie`) réserve la liste à un média ; sans `type`, la liste est mixte.
+- En option : `ranked: true` (classement numéroté), `updated` (date de la dernière modification), et un texte d'introduction sous le frontmatter.
+- Chaque fiche affiche les listes où elle figure. Le lien « Listes » apparaît dans le menu dès la première liste.
+- Une fiche absente, un média hors du `type`, une saison inexistante ou un doublon font échouer le build. Une fiche créée seulement pour une liste, sans entrée de journal, apparaît aussi dans « À voir » / « À lire ».
+
 ## Livres à lire (et films ou séries à voir)
 
 Une fiche d'œuvre sans aucun fichier dans `logs/` est considérée comme « à lire » (ou « à voir ») : il suffit de créer la fiche dans `works/livres/` à partir de `templates/livre-template.md`. Elle apparaît dans la section **À lire** de la page Livres, et quitte cette liste dès que tu crées l'entrée de lecture correspondante (avec `started`).

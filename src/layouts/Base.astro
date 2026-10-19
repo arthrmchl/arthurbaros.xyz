@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import { href } from '../lib/content';
 import { site } from '../lib/site';
 // Polices servies par le site (pas d'appel à Google Fonts) : Newsreader variable (graisse et taille optique), Instrument Sans 400 et 600.
@@ -26,6 +27,8 @@ const siteName = site.name;
 const fullTitle = title ? `${title} · ${siteName}` : `${siteName} · ${site.tagline}`;
 const ogTitle = shareTitle ?? title ?? siteName;
 // Les aperçus exigent des URL absolues : une image dans /public devient relative au site.
+// Le lien « Listes » n'apparaît qu'une fois la première liste créée.
+const hasLists = (await getCollection('lists')).length > 0;
 const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site).href;
 ---
 <!doctype html>
@@ -72,6 +75,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
         <a href={href('/films/')}>Films</a>
         <a href={href('/livres/')}>Livres</a>
         <a href={href('/series/')}>Séries</a>
+        {hasLists && <a href={href('/listes/')}>Listes</a>}
         <a href={href('/a-propos/')}>À propos</a>
       </nav>
     </header>
@@ -120,6 +124,7 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     color: var(--film); background: color-mix(in srgb, var(--film) 14%, transparent); }
   .pill.is-livre { color: var(--livre); background: color-mix(in srgb, var(--livre) 14%, transparent); }
   .pill.is-serie { color: var(--serie); background: color-mix(in srgb, var(--serie) 14%, transparent); }
+  .pill.is-mixte { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
   a.pill { text-decoration: none; }
   a.pill:hover { background: color-mix(in srgb, currentColor 24%, transparent); }
   .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; font: 0.85rem var(--sans); color: var(--muted); }

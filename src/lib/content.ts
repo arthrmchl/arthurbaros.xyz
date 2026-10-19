@@ -204,21 +204,67 @@ export const latestByWork = <T extends { work: { id: string } }>(journal: T[]) =
   const seen = new Set<string>();
   return journal.filter(({ work }) => !seen.has(work.id) && Boolean(seen.add(work.id)));
 };
+type RatedJournal = { work: { id: string }; season?: { number: number }; log: { data: { rating?: number; liked: boolean } } }[];
+/** Dernière entrée notée (ou aimée) d'une œuvre, ou d'une de ses saisons si `season` est donné. */
+export const lastRated = (journal: RatedJournal, id: string, season?: number) =>
+  journal.find((e) => e.work.id === id && (season === undefined || e.season?.number === season)
+    && (e.log.data.rating !== undefined || e.log.data.liked))?.log.data;
 /**
  * Œuvres pour une grille d'affiches, avec la dernière note donnée (et son like) : les plus récemment vues ou lues d'abord,
  * puis celles qui n'ont pas encore d'entrée (à voir, à lire) par ordre alphabétique.
  */
-export const workItems = (works: CollectionEntry<'works'>[], journal: { work: { id: string }; log: { data: { rating?: number; liked: boolean } } }[]) => {
+export const workItems = (works: CollectionEntry<'works'>[], journal: RatedJournal) => {
   const ids = new Set(works.map((w) => w.id));
   const latest = latestByWork(journal.filter(({ work }) => ids.has(work.id)));
   const byId = new Map(works.map((w) => [w.id, w]));
-  const last = (id: string) => journal.find((e) => e.work.id === id && (e.log.data.rating !== undefined || e.log.data.liked))?.log.data;
+  const last = (id: string) => lastRated(journal, id);
   const seen = new Set(latest.map(({ work }) => work.id));
   return [
     ...latest.map(({ work }) => ({ work: byId.get(work.id)!, rating: last(work.id)?.rating, liked: last(work.id)?.liked })),
     ...works.filter((w) => !seen.has(w.id)).sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr')).map((work) => ({ work, rating: undefined })),
   ];
 };
+/** « Films », « Livres », « Séries » ; « Mixte » pour une liste sans `type`. */
+export const listTypeLabel = { film: 'Films', livre: 'Livres', serie: 'Séries', mixte: 'Mixte' } as const;
+/** « 12 films », « 1 livre », « 5 œuvres » (liste mixte). */
+export const fmtListCount = (n: number, type?: keyof typeof typeLabel) => {
+  const [one, many] = type ? { film: ['film', 'films'], livre: ['livre', 'livres'], serie: ['série', 'séries'] }[type] : ['œuvre', 'œuvres'];
+  return `${n} ${n > 1 ? many : one}`;
+};
+
+/**
+ * Toutes les listes, de la plus récemment mise à jour à la plus ancienne, avec leurs éléments reliés aux fiches :
+ * saison éventuelle, affiche (celle de la saison si elle en a une), dernière note et like, rang dans un classement.
+ * Vérifie ce que le schéma ne peut pas voir : le média des œuvres d'une liste typée, l'existence des saisons, les doublons.
+ */
+export async function getLists(journal: JournalEntry[]) {
+  const [lists, works] = await Promise.all([getCollection('lists'), getCollection('works')]);
+  const byId = new Map(works.map((w) => [w.id, w]));
+  return lists
+    .map((list) => {
+      const fail = (msg: string) => { throw new Error(`lists/${list.id} : ${msg}`); };
+      const l = list.data;
+      const keys = new Set<string>();
+      const items = l.items.map(({ work: ref, season: number }, i) => {
+        const work = byId.get(ref.id) ?? fail(`l'œuvre \`${ref.id}\` n'a pas de fiche dans works/ (vérifie son nom de fichier).`);
+        const w = work.data;
+        if (l.type && w.type !== l.type) fail(`\`${work.id}\` est ${{ film: 'un film', livre: 'un livre', serie: 'une série' }[w.type]}, dans une liste de ${listTypeLabel[l.type].toLowerCase()} (\`type: ${l.type}\`).`);
+        if (number !== undefined && w.type !== 'serie') fail(`\`${work.id}\` n'est pas une série : pas de \`season\`.`);
+        const season = number === undefined ? undefined
+          : w.seasons.find((s) => s.number === number) ?? fail(`la saison ${number} n'existe pas dans la fiche \`${work.id}\`.`);
+        const key = `${work.id}/${number ?? ''}`;
+        if (keys.has(key)) fail(`\`${work.id}\`${seasonSuffix(season)} apparaît deux fois.`);
+        keys.add(key);
+        const last = lastRated(journal, work.id, number);
+        return { work, season, image: season?.poster ?? w.poster, rating: last?.rating, liked: last?.liked, rank: l.ranked ? i + 1 : undefined };
+      });
+      return { list, items };
+    })
+    .sort((a, b) => (b.list.data.updated ?? b.list.data.created).getTime() - (a.list.data.updated ?? a.list.data.created).getTime()
+      || a.list.data.title.localeCompare(b.list.data.title, 'fr'));
+}
+export type ListEntry = Awaited<ReturnType<typeof getLists>>[number];
+
 /**
  * Tri par date de sortie (publication, début de diffusion), de la plus récente à la plus ancienne, puis par titre.
  * Une date imprécise (`2026`, `2026-10`) passe après les dates plus précises de la même année ou du même mois.
