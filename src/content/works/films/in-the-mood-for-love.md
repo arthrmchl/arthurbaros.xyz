@@ -5,7 +5,7 @@ type: film
 creators: ["Wong Kar-wai"]
 released: 2000-09-29
 runtime: 99
-poster: "https://image.tmdb.org/t/p/original/8BgGbbWiLNhPtkMkN0gGTnbtvBv.jpg"
+poster: "https://image.tmdb.org/t/p/original/pUWyAWcZGkZoJZj0L0lrA9fr9g3.jpg"
 backdrop: "https://image.tmdb.org/t/p/original/oVkkwAGg2N9ucZL8KPC7kfikWaF.jpg"
 tags: [romance, drame]
 ---
