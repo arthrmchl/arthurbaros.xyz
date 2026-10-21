@@ -96,6 +96,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     <main><slot /></main>
     <footer class="site-footer">
       <a href={href('/genres/')}>Genres</a><span class="sep">·</span><a href={href('/rss.xml')}>Flux RSS</a><span class="sep">·</span><a href={site.instagram.url} rel="me">Instagram</a>
+      {/* Mention exigée par les conditions d'utilisation de l'API TMDB. */}
+      <p class="credits"><a class="tmdb" href="https://www.themoviedb.org/"><img src={href('/tmdb.svg')} alt="TMDB" width="273" height="36" /></a>Les données sur les films et les séries proviennent de <a href="https://www.themoviedb.org/">TMDB</a>. Ce site utilise l’API TMDB, sans être approuvé ni certifié par TMDB.</p>
     </footer>
   </body>
 </html>
@@ -142,6 +144,11 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
     .site-header[data-menu="open"] nav a { padding: 0.55rem 0; text-decoration: none; border-top: 1px solid var(--line); }
   }
   .site-footer { margin: 4rem 0 2rem; padding-top: 1rem; border-top: 1px solid var(--line); font: 0.9rem var(--sans); color: var(--muted); }
+  .site-footer .credits { margin: 0.75rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+  /* Logo officiel (fichier fourni par TMDB, non modifié), à gauche de la mention.
+     Posé sur la ligne de base et haut d'une majuscule : ses lettres s'alignent sur celles du texte. */
+  .site-footer .tmdb { margin-right: 0.6em; }
+  .site-footer .tmdb img { display: inline; vertical-align: baseline; height: 0.7em; height: 1cap; width: auto; }
   /* Lu par les lecteurs d'écran et les moteurs de recherche, invisible à l'écran. */
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .meta { font: 0.9rem/1.4 var(--sans); color: var(--muted); }
