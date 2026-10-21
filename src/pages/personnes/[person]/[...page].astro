@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Pagination from '../../../components/Pagination.astro';
+import WorkGrid from '../../../components/WorkGrid.astro';
+import { getJournal, pageSize, pageSuffix, paginate, slugify, workItems } from '../../../lib/content';
+
+// Une page (ou plusieurs) par réalisateur·ice, auteur·ice ou créateur·ice cité dans une fiche.
+export async function getStaticPaths() {
+  const [all, journal] = await Promise.all([getCollection('works'), getJournal()]);
+  const names = [...new Set(all.flatMap((w) => w.data.creators))];
+  return names.flatMap((name) => {
+    const works = all.filter((w) => w.data.creators.includes(name));
+    return paginate(workItems(works, journal), pageSize.works).map(({ page, ...props }) => ({
+      params: { person: slugify(name), page },
+      props: { ...props, name, works },
+    }));
+  });
+}
+const { name, works, items, current, last } = Astro.props;
+const suffix = pageSuffix(current, last);
+// « Réalisation de 2 films · Écriture d'un livre » : son rôle selon le type d'œuvre.
+const roles = ([
+  ['film', 'Réalisation', 'film', 'films'],
+  ['serie', 'Création', 'série', 'séries'],
+  ['livre', 'Écriture', 'livre', 'livres'],
+] as const)
+  .map(([type, role, one, many]) => [role, works.filter((w) => w.data.type === type).length, one, many] as const)
+  .filter(([, n]) => n > 0)
+  .map(([role, n, one, many]) => `${role} de ${n > 1 ? `${n} ${many}` : `${one === 'série' ? 'une' : 'un'} ${one}`}`);
+---
+<Base title={`${name}${suffix}`} description={`${roles.join(', ')} : ${works.map((w) => w.data.title).join(', ')}${suffix}.`}>
+  <h1>{name}</h1>
+  <p class="meta">{roles.map((r, i) => <>{i > 0 && <span class="sep">·</span>}{r}</>)}</p>
+  <WorkGrid items={items} />
+  <Pagination current={current} last={last} root={`/personnes/${Astro.params.person}/`} />
+</Base>

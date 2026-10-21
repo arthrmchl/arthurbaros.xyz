@@ -1,15 +1,22 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { excerpt, fmtListCount, getJournal, getLists, href, listTypeLabel, posterImage } from '../../lib/content';
+import Pagination from '../../components/Pagination.astro';
+import { excerpt, fmtListCount, getJournal, getLists, href, listTypeLabel, pageSize, pageSuffix, paginate, posterImage, type ListEntry } from '../../lib/content';
 
-// Toutes les listes, la plus récemment mise à jour d'abord, avec un aperçu de leurs premières affiches.
-const lists = await getLists(await getJournal());
+// Toutes les listes, la plus récemment mise à jour d'abord, par pages, avec un aperçu de leurs premières affiches.
+export async function getStaticPaths() {
+  const lists = await getLists(await getJournal());
+  return paginate(lists, pageSize.lists).map(({ page, ...props }) => ({ params: { page }, props: { ...props, total: lists.length } }));
+}
+const { items: lists, current, last, total } = Astro.props as { items: ListEntry[]; current: number; last: number; total: number };
+// Le filtre agit sur la page affichée : seuls les médias qui y figurent ont un bouton.
 const kinds = (['film', 'livre', 'serie', 'mixte'] as const).filter((k) => lists.some(({ list }) => (list.data.type ?? 'mixte') === k));
-const count = `${lists.length} ${lists.length > 1 ? 'listes' : 'liste'}`;
+const count = `${total} ${total > 1 ? 'listes' : 'liste'}`;
+const suffix = pageSuffix(current, last);
 ---
-<Base title="Listes" description={`Mes listes de films, de livres et de séries : ${lists.map(({ list }) => list.data.title).join(', ') || 'aucune pour l’instant'}.`}>
+<Base title={`Listes${suffix}`} description={`Mes listes de films, de livres et de séries : ${lists.map(({ list }) => list.data.title).join(', ') || 'aucune pour l’instant'}${suffix}.`}>
   <h1>Listes</h1>
-  <p class="meta">{lists.length ? count : 'Aucune liste pour l’instant.'}</p>
+  <p class="meta">{total ? count : 'Aucune liste pour l’instant.'}</p>
 
   {kinds.length > 1 && (
     <div class="filters" role="group" aria-label="Filtrer par média">
@@ -44,6 +51,7 @@ const count = `${lists.length} ${lists.length > 1 ? 'listes' : 'liste'}`;
       );
     })}
   </ul>
+  <Pagination current={current} last={last} root="/listes/" />
 </Base>
 
 <script>

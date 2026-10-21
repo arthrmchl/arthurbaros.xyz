@@ -280,6 +280,26 @@ export const byRelease = (a: CollectionEntry<'works'>, b: CollectionEntry<'works
 export const journalYears = (journal: { log: { data: Parameters<typeof logDate>[0] } }[]) =>
   [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
 
+/** Nombre d'éléments par page : journal (lignes), grilles d'affiches (multiple de 3, 4, 5 et 6 : rangées pleines), listes. */
+export const pageSize = { journal: 50, works: 60, lists: 20 } as const;
+/**
+ * Découpe `items` en pages pour `getStaticPaths` (paramètre `[...page]`) : la page 1 garde l'adresse de la liste (`/journal/`),
+ * les suivantes y ajoutent `page/2/`, `page/3/`… Une liste vide a quand même sa page 1.
+ */
+export const paginate = <T>(items: T[], size: number) => {
+  const last = Math.max(1, Math.ceil(items.length / size));
+  return Array.from({ length: last }, (_, i) => ({
+    page: i ? `page/${i + 1}` : undefined,
+    items: items.slice(i * size, (i + 1) * size),
+    current: i + 1,
+    last,
+  }));
+};
+/** Adresse de la page `n` d'une liste dont `root` est l'adresse de la page 1 (`/journal/`). */
+export const pageUrl = (root: string, n: number) => href(n > 1 ? `${root}page/${n}/` : root);
+/** « Journal » en page 1, « Journal (page 2) » ensuite : titres et descriptions distincts d'une page à l'autre. */
+export const pageSuffix = (current: number, last: number) => (current > 1 ? ` (page ${current} sur ${last})` : '');
+
 /** Début d'un texte Markdown en texte brut, coupé proprement vers `max` caractères (aperçus de liens). */
 export const excerpt = (markdown = '', max = 200) => {
   const text = markdown

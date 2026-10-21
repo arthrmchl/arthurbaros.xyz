@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Pagination from '../../../components/Pagination.astro';
+import WorkGrid from '../../../components/WorkGrid.astro';
+import { getJournal, href, pageSize, pageSuffix, paginate, slugify, workItems } from '../../../lib/content';
+import { genres } from '../../../lib/genres';
+
+// Une page (ou plusieurs) par genre utilisé dans au moins une fiche.
+export async function getStaticPaths() {
+  const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
+  return genres
+    .map((genre) => ({ genre, works: works.filter((w) => (w.data.tags as string[]).includes(genre)) }))
+    .filter(({ works }) => works.length > 0)
+    .flatMap(({ genre, works }) => paginate(workItems(works, journal), pageSize.works).map(({ page, ...props }) => ({
+      params: { genre: slugify(genre), page },
+      props: { ...props, genre, total: works.length },
+    })));
+}
+const { genre, items, current, last, total } = Astro.props;
+const count = `${total} ${total > 1 ? 'œuvres' : 'œuvre'}`;
+const suffix = pageSuffix(current, last);
+---
+<Base title={`Genre : ${genre}${suffix}`} description={`Films, livres et séries du genre ${genre}, avec mes notes : ${count}${suffix}.`}>
+  <p class="meta"><a href={href('/genres/')}>Genres</a></p>
+  <h1 class="genre">{genre}</h1>
+  <p class="meta">{count}</p>
+  <WorkGrid items={items} />
+  <Pagination current={current} last={last} root={`/genres/${Astro.params.genre}/`} />
+</Base>
+
+<style>
+  .genre { margin-top: 0.5rem; }
+  .genre::first-letter { text-transform: uppercase; }
+</style>
