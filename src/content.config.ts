@@ -150,7 +150,7 @@ const logs = defineCollection({
       watched: z.array(z.object({ date: z.coerce.date(), episodes })).default([]), // épisodes vus, jour par jour (saisons)
       started: optional(z.coerce.date()),       // début de lecture (livres)
       date: optional(released),                 // date du visionnage / de la fin de lecture (absente si lecture en cours) : `2026`, `2026-10` ou `2026-10-08`
-      rating: optional(z.number().int('La note est un nombre entier de 0 à 5.').min(0).max(5)), // absente si lecture en cours
+      rating: optional(z.number().int('La note est un nombre entier de 0 à 5.').min(0).max(5)), // optionnelle ; absente si lecture en cours
       abandoned: z.boolean().default(false),   // arrêté avant la fin : la `date` est celle de l'arrêt
       liked: z.boolean().default(false),       // coup de cœur (le « like » de Letterboxd)
       repeat: z.boolean().default(false),      // revisionnage / relecture

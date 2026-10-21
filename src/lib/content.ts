@@ -157,10 +157,8 @@ export async function getJournal() {
     const work = byId.get(log.data.work.id)!;
     const type = work.data.type;
     const fail = (msg: string) => { throw new Error(`logs/${log.id} : ${msg}`); };
-    // Seule une lecture ou une saison peut être en cours : un visionnage a toujours une date, et une note s'il n'est pas abandonné.
-    if (type === 'film' && (!log.data.date || (log.data.rating === undefined && !log.data.abandoned))) {
-      fail('un visionnage doit avoir une `date` et une `rating` (ou `abandoned: true`).');
-    }
+    // Seule une lecture ou une saison peut être en cours : un visionnage a toujours une date (la note reste optionnelle).
+    if (type === 'film' && !log.data.date) fail('un visionnage doit avoir une `date`.');
     if (type === 'serie' && log.data.season === undefined && log.data.abandoned) {
       fail('un avis sur une série entière ne peut pas être `abandoned` : précise la `season` arrêtée.');
     }

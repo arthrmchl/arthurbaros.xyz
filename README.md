@@ -30,10 +30,10 @@ Le nom du fichier d'une fiche est son identifiant : `work: parasite` dans un log
    - `poster` et `backdrop` acceptent une URL ou un chemin vers un fichier de `public/`.
 2. Crée un fichier dans `logs/` : `AAAA-MM-JJ-titre.md` (modèles dans `templates/`), puis ton texte.
 
-   - **Visionnage** : `work`, `date`, `rating` (note entière de 0 à 5), puis en option `venue` (`cinema` ou `maison`), `version` (`vf` ou `vostfr`), `accompanied`, `repeat`.
-   - **Lecture** : `work`, `started` (début), `language`, puis `date` (fin) et `rating` une fois le livre terminé : sans `date`, la lecture s'affiche « en cours ».
-   - **Saison** : `work`, `season` (son numéro) et `watched`, la liste des jours de visionnage avec les épisodes vus ce jour-là (`3`, `[1, 2]` ou `"4-7"`). Tu complètes le même fichier au fil des épisodes. La saison est « en cours » jusqu'à ce que tous ses épisodes soient vus. Ajoute alors `rating` et ton texte. En option : `version`, `accompanied`, `repeat`.
-   - **Abandon** (visionnage, lecture ou saison) : `abandoned: true`, avec la `date` du jour de l'arrêt ; la note est alors optionnelle. Une saison datée à laquelle il manque des épisodes, sans `abandoned`, fait échouer le build (oubli probable).
+   - **Visionnage** : `work`, `date`, puis en option `rating` (note entière de 0 à 5), `venue` (`cinema` ou `maison`), `version` (`vf` ou `vostfr`), `accompanied`, `repeat`.
+   - **Lecture** : `work`, `started` (début), `language`, puis `date` (fin) et, si tu veux, `rating` une fois le livre terminé : sans `date`, la lecture s'affiche « en cours ».
+   - **Saison** : `work`, `season` (son numéro) et `watched`, la liste des jours de visionnage avec les épisodes vus ce jour-là (`3`, `[1, 2]` ou `"4-7"`). Tu complètes le même fichier au fil des épisodes. La saison est « en cours » jusqu'à ce que tous ses épisodes soient vus. Ajoute alors ton texte et, si tu veux, `rating`. En option : `version`, `accompanied`, `repeat`.
+   - **Abandon** (visionnage, lecture ou saison) : `abandoned: true`, avec la `date` du jour de l'arrêt. Une saison datée à laquelle il manque des épisodes, sans `abandoned`, fait échouer le build (oubli probable).
    - Si une œuvre (ou une saison) a déjà une entrée plus ancienne, le build avertit quand `repeat: true` manque.
    - **Avis sur toute la série** : `work`, `date`, `rating` (optionnelle), sans `season`.
 3. `git add . && git commit -m "Review : ..." && git push`

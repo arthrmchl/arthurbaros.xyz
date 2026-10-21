@@ -43,12 +43,12 @@ export const aboutPageSchema = (origin: URL) => ({ '@context': 'https://schema.o
 /** Fiche d'œuvre. */
 export const workPageSchema = (work: Work, origin: URL) => ({ '@context': 'https://schema.org', ...workSchema(work, origin) });
 
-/** Review notée d'une œuvre ou d'une saison ; rien pour une entrée sans note (lecture ou saison en cours). */
+/** Review d'une œuvre ou d'une saison ; rien pour une entrée sans note ni texte (lecture ou saison en cours, simple visionnage). */
 export function reviewSchema(log: Log, work: Work, season: Season | undefined, origin: URL) {
   const l = log.data;
-  if (l.rating === undefined) return undefined;
-  const item = workSchema(work, origin);
   const body = l.summary || excerpt(log.body, 500);
+  if (l.rating === undefined && !(l.date && body)) return undefined;
+  const item = workSchema(work, origin);
   return {
     '@context': 'https://schema.org',
     '@type': 'Review',
@@ -59,7 +59,7 @@ export function reviewSchema(log: Log, work: Work, season: Season | undefined, o
     itemReviewed: season
       ? { '@type': 'TVSeason', name: season.title || `Saison ${season.number}`, seasonNumber: season.number, numberOfEpisodes: season.episodes, partOfSeries: item }
       : item,
-    reviewRating: { '@type': 'Rating', ratingValue: l.rating, bestRating: 5, worstRating: 0 },
+    ...(l.rating !== undefined ? { reviewRating: { '@type': 'Rating', ratingValue: l.rating, bestRating: 5, worstRating: 0 } } : {}),
     ...(body ? { reviewBody: body } : {}),
   };
 }
