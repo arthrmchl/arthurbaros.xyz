@@ -278,6 +278,48 @@ export const byRelease = (a: CollectionEntry<'works'>, b: CollectionEntry<'works
 export const journalYears = (journal: { log: { data: Parameters<typeof logDate>[0] } }[]) =>
   [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
 
+/**
+ * Épisodes vus, d'après les jours de visionnage (une saison peut chevaucher deux années), et leur durée totale en minutes
+ * (épisodes dont la durée est renseignée) : pendant l'année `year`, ou depuis le début du journal sans `year`.
+ * Un avis sur une série entière (daté de l'année) compte tous les épisodes de toutes ses saisons.
+ */
+export const episodeTotals = (journal: JournalEntry[], year?: number) => {
+  const inYear = (d?: Date) => Boolean(d) && (year === undefined || d!.getUTCFullYear() === year);
+  return journal.flatMap(({ log, work, season }) => season
+    ? log.data.watched
+      .filter(({ date }) => inYear(date))
+      .flatMap(({ episodes }) => episodes.map((n) => season.runtimes[n - 1] ?? 0))
+    : work.data.type === 'serie' && inYear(log.data.date)
+      ? work.data.seasons.flatMap((s) => Array.from({ length: s.episodes }, (_, i) => s.runtimes[i] ?? 0))
+      : [])
+    .reduce((t, runtime) => ({ episodes: t.episodes + 1, episodeMinutes: t.episodeMinutes + runtime }), { episodes: 0, episodeMinutes: 0 });
+};
+
+/**
+ * Résumé d'un bilan pour la description de la page (les tuiles de YearStats le disent déjà à l'écran) :
+ * « 12 films, 3 livres et 2 saisons de série, note moyenne 3,5/5, 4 coups de cœur. »
+ * Toutes les entrées comptées ici entrent dans la note moyenne (si elles sont notées).
+ */
+export const statsSummary = (entries: JournalEntry[]) => {
+  const films = entries.filter((e) => e.work.data.type === 'film').length;
+  const livres = entries.filter((e) => e.work.data.type === 'livre').length;
+  const series = entries.filter((e) => e.season).length;
+  const reviews = entries.filter((e) => e.work.data.type === 'serie' && !e.season).length;
+  const counts = [
+    `${films} ${films > 1 ? 'films' : 'film'}`,
+    `${livres} ${livres > 1 ? 'livres' : 'livre'}`,
+    series && `${series} ${series > 1 ? 'saisons' : 'saison'} de série`,
+    reviews && `${reviews} avis sur une série entière`,
+  ].filter(Boolean) as string[];
+  const countText = counts.length > 2 ? `${counts.slice(0, -1).join(', ')} et ${counts.at(-1)}` : counts.join(' et ');
+  const ratings = entries.flatMap((e) => e.log.data.rating ?? []);
+  const avg = ratings.reduce((s, r) => s + r, 0) / ratings.length;
+  const likes = latestByWork(entries.filter((e) => e.log.data.liked)).length; // une œuvre aimée deux fois compte une fois
+  return countText
+    + (ratings.length > 0 ? `, note moyenne ${avg.toFixed(1).replace('.', ',')}/5` : '')
+    + (likes > 0 ? `, ${likes} ${likes > 1 ? 'coups' : 'coup'} de cœur.` : '.');
+};
+
 /** Nombre d'éléments par page : journal (lignes), grilles d'affiches (multiple de 3, 4, 5 et 6 : rangées pleines), listes. */
 export const pageSize = { journal: 50, works: 60, lists: 20 } as const;
 /**

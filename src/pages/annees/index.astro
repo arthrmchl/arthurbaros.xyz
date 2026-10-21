@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import YearStats from '../../components/YearStats.astro';
+import { getJournal, episodeTotals, statsSummary, href } from '../../lib/content';
+
+// Bilan de tout le journal : les mêmes tuiles que le bilan d'une année, avec une frise des années au lieu des mois.
+// Pas de journal en dessous (il a sa page) : chaque année de la frise mène à son bilan.
+const journal = await getJournal();
+const { episodes, episodeMinutes } = episodeTotals(journal);
+---
+<Base title="Bilan toutes années confondues" description={`Bilan de tout le journal : ${statsSummary(journal)}`}>
+  <h1>Toutes les années</h1>
+  <p class="meta"><a href={href('/journal/')}>Tout le journal →</a></p>
+  <YearStats entries={journal} episodes={episodes} episodeMinutes={episodeMinutes} />
+</Base>

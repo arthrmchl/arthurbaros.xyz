@@ -1,12 +1,13 @@
 ---
 import LikeIcon from './LikeIcon.astro';
-import { fmtRuntime, capitalize, latestByWork, logDate } from '../lib/content';
+import { fmtRuntime, capitalize, latestByWork, logDate, href } from '../lib/content';
 // Bilan chiffré d'une année : une tuile par type d'œuvre et une pour les notes (avec les coups de cœur), puis la frise des mois.
+// Sans `year`, bilan de tout le journal : la frise montre les années, chacune liée à son bilan, et rien n'est à filtrer en dessous.
 // `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues,
 // et `episodeMinutes` leur durée totale (épisodes dont la durée est renseignée).
 type Kind = 'film' | 'livre' | 'serie';
 interface Props {
-  year: number;
+  year?: number;
   entries: {
     work: { id: string; data: { type: Kind; runtime?: number; seasons: { number: number }[] } };
     log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; watched?: { date: Date }[]; rating?: number; liked: boolean; abandoned: boolean;
@@ -82,23 +83,31 @@ const maxRating = Math.max(1, ...histogram.map((h) => h.n));
 const avg = ratings.length ? (ratings.reduce((s, r) => s + r, 0) / ratings.length).toFixed(1).replace('.', ',') : undefined;
 
 // Frise des mois : les entrées rangées au mois de leur date dans le journal (logDate), empilées par type.
-// Une entrée datée de l'année seulement (`2026`) n'a pas de mois : elle reste hors de la frise.
+// Une entrée datée de l'année seulement (`2026`) n'a pas de mois : elle reste hors de la frise (mais compte dans celle des années).
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const KINDS: { kind: Kind; one: string; many: string }[] = [
   { kind: 'film', one: 'film', many: 'films' }, { kind: 'serie', one: 'série', many: 'séries' }, { kind: 'livre', one: 'livre', many: 'livres' },
 ];
-const dated = entries.filter((e) => e.log.data.datePrecision !== 'year');
+const dated = year === undefined ? entries : entries.filter((e) => e.log.data.datePrecision !== 'year');
 const kinds = KINDS.filter(({ kind }) => dated.some((e) => e.work.data.type === kind));
+const stack = (list: typeof entries) => kinds.map((k) => ({ ...k, n: count(list, (e) => e.work.data.type === k.kind) }));
 // Année en cours (à la date du build) : les mois à venir sont dessinés à part, pour ne pas passer pour des mois vides.
 const now = new Date();
 const lastMonth = year === now.getUTCFullYear() ? now.getUTCMonth() : 11;
-const months = MONTHS.map((name, m) => {
-  const inMonth = dated.filter((e) => logDate(e.log.data).getUTCMonth() === m);
-  const parts = kinds.map((k) => ({ ...k, n: count(inMonth, (e) => e.work.data.type === k.kind) }));
-  return { month: m + 1, name, short: SHORT[m], total: inMonth.length, parts, future: m > lastMonth };
-});
-const maxMonth = Math.max(1, ...months.map((m) => m.total));
+// Une colonne par mois, ou par année (de la première à la dernière du journal, années vides comprises) sans `year`.
+const years = dated.map((e) => logDate(e.log.data).getUTCFullYear());
+const columns = year !== undefined
+  ? MONTHS.map((name, m) => {
+    const list = dated.filter((e) => logDate(e.log.data).getUTCMonth() === m);
+    return { key: m + 1, name, short: SHORT[m], letter: name[0].toUpperCase(), total: list.length, parts: stack(list), future: m > lastMonth };
+  })
+  : Array.from({ length: years.length ? Math.max(...years) - Math.min(...years) + 1 : 0 }, (_, i) => {
+    const y = Math.min(...years) + i;
+    const list = dated.filter((e) => logDate(e.log.data).getUTCFullYear() === y);
+    return { key: y, name: String(y), short: String(y), letter: `’${String(y).slice(2)}`, total: list.length, parts: stack(list), future: false };
+  });
+const maxColumn = Math.max(1, ...columns.map((m) => m.total));
 ---
 <section class="stats" aria-labelledby="stats-title">
   <h2 id="stats-title">En chiffres</h2>
@@ -135,10 +144,11 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
                 <span class="bar" style={`--h: ${n / maxRating}; --liked: ${n ? liked / n : 0}`} />
                 <span class="axis">{rating}<span aria-hidden="true">★</span><span class="visually-hidden">/5</span></span>
               </>;
-              // Comme les mois : une note non vide est un bouton qui filtre le journal sur cette note.
+              // Comme les mois : une note non vide est un bouton qui filtre le journal sur cette note (s'il y a un journal en dessous).
+              const filter = n > 0 && year !== undefined;
               return (
-                <li title={n > 0 ? undefined : title}>
-                  {n > 0 ? <button type="button" data-rating={rating} aria-pressed="false" title={title}>{bar}</button> : bar}
+                <li title={filter ? undefined : title}>
+                  {filter ? <button type="button" data-rating={rating} aria-pressed="false" title={title}>{bar}</button> : bar}
                 </li>
               );
             })}
@@ -150,24 +160,27 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
 
   <figure class="timeline">
     <figcaption class="meta">
-      Mois par mois<span class="sep">·</span>{kinds.map((k) => <span class="key" style={`--accent: var(--${k.kind})`}>{k.many}</span>)}
+      {year !== undefined ? 'Mois par mois' : 'Année par année'}<span class="sep">·</span>{kinds.map((k) => <span class="key" style={`--accent: var(--${k.kind})`}>{k.many}</span>)}
     </figcaption>
-    <ol class="months">
-      {months.map((m) => {
+    <ol class="months" style={`--columns: ${columns.length}`}>
+      {columns.map((m) => {
         const title = m.future ? undefined : `${capitalize(m.name)} : ${m.total ? m.parts.filter((p) => p.n).map((p) => plural(p.n, p.one, p.many)).join(', ') : 'rien'}`;
         const bar = <>
           <span class="count">{m.total > 0 && m.total}</span>
           {m.total > 0 && (
-            <span class="stack" style={`--h: ${m.total / maxMonth}`}>
+            <span class="stack" style={`--h: ${m.total / maxColumn}`}>
               {m.parts.filter((p) => p.n).map((p) => <span class="seg" style={`--n: ${p.n}; --accent: var(--${p.kind})`} />)}
             </span>
           )}
-          <span class="axis"><span class="short" aria-hidden="true">{m.short}</span><span class="letter" aria-hidden="true">{m.name[0].toUpperCase()}</span><span class="visually-hidden">{m.name}</span></span>
+          <span class="axis"><span class="short" aria-hidden="true">{m.short}</span><span class="letter" aria-hidden="true">{m.letter}</span><span class="visually-hidden">{m.name}</span></span>
         </>;
         // Un mois non vide est un bouton : il filtre le journal en dessous sur ce mois ; un second clic retire le filtre.
+        // Une année non vide est un lien vers son bilan.
         return (
           <li class:list={{ future: m.future }} title={m.total > 0 ? undefined : title}>
-            {m.total > 0 ? <button type="button" data-month={m.month} aria-pressed="false" title={title}>{bar}</button> : bar}
+            {m.total === 0 ? bar
+              : year !== undefined ? <button type="button" data-month={m.key} aria-pressed="false" title={title}>{bar}</button>
+              : <a href={href(`/annees/${m.key}/`)} title={title}>{bar}</a>}
           </li>
         );
       })}
@@ -225,9 +238,9 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   /* Cœur dans le texte : posé sur la ligne de base, à la hauteur des majuscules. */
   .ratings .meta :global(.like-icon) { display: inline-block; margin-right: 0.3em; vertical-align: -0.05em; transform: none; }
   .bars li:hover .bar { background: var(--ink); }
-  .bars button, .months button { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;
-    padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
-  .bars button:focus-visible, .months button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
+  .bars button, .months button, .months a { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;
+    padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: none; cursor: pointer; }
+  .bars button:focus-visible, .months button:focus-visible, .months a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
   /* Note sélectionnée : les autres barres s'effacent, son libellé passe en gras. */
   .bars:has([aria-pressed='true']) button:not([aria-pressed='true']) .bar { opacity: 0.35; }
   .bars [aria-pressed='true'] .axis { color: var(--ink); font-weight: 600; border-top-color: var(--ink); }
@@ -235,7 +248,7 @@ const maxMonth = Math.max(1, ...months.map((m) => m.total));
   .timeline { margin: 1.5rem 0 0; }
   .key::before { content: ''; display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.3em; border-radius: 50%; background: var(--accent); }
   .key + .key { margin-left: 0.75em; }
-  .months { list-style: none; padding: 0; margin: 0.75rem 0 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px;
+  .months { list-style: none; padding: 0; margin: 0.75rem 0 0; display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 2px;
     align-items: end; height: 8rem; }
   /* Une pile par mois, un segment par type d'œuvre (films en bas). */
   .stack { display: flex; flex-direction: column-reverse; gap: 1px; width: min(70%, 2.25rem); height: calc(var(--h) * 5.5rem); margin-top: 0.15rem;

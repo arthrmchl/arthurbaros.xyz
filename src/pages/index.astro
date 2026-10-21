@@ -67,6 +67,7 @@ const shelves = ([
   <p class="meta">
     Bilans par année :
     {years.map((y, i) => <>{i > 0 && ', '}<a href={href(`/annees/${y}/`)}>{y}</a></>)}
+    <span class="sep">·</span><a href={href('/annees/')}>Toutes années confondues</a>
   </p>
 </Base>
 
