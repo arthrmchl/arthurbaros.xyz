@@ -1,5 +1,5 @@
 ---
-title: "Les Royaume des chats"
+title: "Le Royaume des chats"
 originalTitle: ""
 type: film
 creators: ["Hiroyuki Morita"]
