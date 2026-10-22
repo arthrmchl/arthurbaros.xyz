@@ -5,7 +5,7 @@ import LikeIcon from '../../components/LikeIcon.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -26,7 +26,8 @@ const poster = season?.poster ?? w.poster;
 // Quand : « Vu le … » pour un film ; pour un livre ou une saison, début et fin (la fin peut manquer).
 const e = season ? 'e' : ''; // accord avec « la saison »
 const when =
-  ongoing ? `Commencé${e} le ${fmtDate(l.started!)}`
+  l.undated ? undatedLabel
+  : ongoing ? `Commencé${e} le ${fmtDate(l.started!)}`
   : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} le ${fmtDate(l.started)}, arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : l.abandoned ? `Arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : season ? `Vue ${fmtPeriod(l)}`

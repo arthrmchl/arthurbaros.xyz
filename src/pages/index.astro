@@ -13,9 +13,9 @@ const years = journalYears(journal);
 
 // Lectures et saisons en cours : la plus récente entrée de chaque livre ou série, si elle n'a pas de date de fin.
 const reading = latestByWork(journal.filter(({ work }) => work.data.type !== 'film')).filter(({ log }) => inProgress(log.data));
-// Derniers passages terminés, une rangée par type. Les séries, plus rares, n'ont leur rangée qu'une fois la première vue.
+// Derniers passages terminés (et datés), une rangée par type. Les séries, plus rares, n'ont leur rangée qu'une fois la première vue.
 const recent = (kind: 'film' | 'livre' | 'serie') =>
-  journal.filter(({ log, work }) => work.data.type === kind && !inProgress(log.data)).slice(0, 5);
+  journal.filter(({ log, work }) => work.data.type === kind && log.data.date).slice(0, 5);
 const shelves = ([
   { kind: 'film', title: 'Derniers films vus', all: 'Tous les films', route: '/films/', entries: recent('film') },
   { kind: 'livre', title: 'Derniers livres lus', all: 'Tous les livres', route: '/livres/', entries: recent('livre') },

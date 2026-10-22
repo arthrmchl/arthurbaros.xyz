@@ -102,12 +102,17 @@ export const fmtEpisodes = (list: number[]) => {
   return `${nums.length > 1 ? 'épisodes' : 'épisode'} ${text}`;
 };
 
-/** Date de référence d'une entrée (tri, bilans) : la fin, le dernier épisode vu d'une saison en cours, ou le début d'une lecture en cours. */
-export const logDate = (l: { date?: Date; started?: Date; watched?: { date: Date }[] }) => (l.date ?? l.watched?.at(-1)?.date ?? l.started)!;
+/**
+ * Date de référence d'une entrée (tri, bilans) : la fin, le dernier épisode vu d'une saison en cours, ou le début d'une lecture en cours.
+ * Aucune pour une série vue à une date oubliée (`undated`).
+ */
+export const logDate = (l: { date?: Date; started?: Date; watched?: { date: Date }[] }) => l.date ?? l.watched?.at(-1)?.date ?? l.started;
 /** L'entrée a un texte (review ou accroche) : sinon sa page n'est pas proposée aux moteurs de recherche (voir aussi astro.config.mjs). */
 export const hasText = (log: { body?: string; data: { summary?: string } }) => Boolean(log.body?.trim() || log.data.summary?.trim());
-/** Lecture commencée mais pas terminée. */
-export const inProgress = (l: { date?: Date }) => !l.date;
+/** Lecture ou saison commencée mais pas terminée (une série vue à une date oubliée n'a pas de date, mais elle est finie). */
+export const inProgress = (l: { date?: Date; undated: boolean }) => !l.date && !l.undated;
+/** « Date de visionnage inconnue » : une série vue à une date oubliée. */
+export const undatedLabel = 'Date de visionnage inconnue';
 /** « Affiche » ou « Couverture », selon le type d'œuvre (textes alternatifs). */
 export const imageLabel = (type: string) => (type === 'livre' ? 'Couverture' : 'Affiche');
 /** « Abandonné », « Abandonnée » (une saison). */
@@ -137,7 +142,7 @@ function followSeason(log: CollectionEntry<'logs'>, work: CollectionEntry<'works
     }
   }
   const last = l.watched.at(-1)?.date;
-  const complete = seen.size === season.episodes;
+  const complete = l.undated || seen.size === season.episodes; // vue à une date oubliée : vue en entier
   if (l.date && !complete && !l.abandoned) {
     const missing = Array.from({ length: season.episodes }, (_, i) => i + 1).filter((n) => !seen.has(n));
     fail(`une \`date\` de fin est donnée mais il manque les ${fmtEpisodes(missing)} : ajoute-les à \`watched\`, ou mets \`abandoned: true\` si tu as arrêté.`);
@@ -158,19 +163,19 @@ export async function getJournal() {
     const type = work.data.type;
     const fail = (msg: string) => { throw new Error(`logs/${log.id} : ${msg}`); };
     // Seule une lecture ou une saison peut être en cours : un visionnage a toujours une date (la note reste optionnelle).
+    // Seule une série peut être vue à une date oubliée (ni `date`, ni `watched`).
     if (type === 'film' && !log.data.date) fail('un visionnage doit avoir une `date`.');
+    if (type === 'livre' && log.data.undated) fail('une lecture doit avoir une `date` (fin) ou un `started` (début).');
     if (type === 'serie' && log.data.season === undefined && log.data.abandoned) {
       fail('un avis sur une série entière ne peut pas être `abandoned` : précise la `season` arrêtée.');
     }
     if (type !== 'serie' && log.data.season !== undefined) fail('seule une série a des saisons (`season`).');
-    if (type === 'serie' && log.data.season === undefined && !log.data.date) {
-      fail('un avis sur une série entière doit avoir une `date` (ou précise une `season`).');
-    }
     if (type !== 'serie' || log.data.season === undefined) return { log, work, season: undefined };
     const { data, season } = followSeason(log, work);
     return { log: { ...log, data }, work, season };
   });
-  journal.sort((a, b) => logDate(b.log.data).getTime() - logDate(a.log.data).getTime());
+  // Les séries vues à une date oubliée en dernier.
+  journal.sort((a, b) => (logDate(b.log.data)?.getTime() ?? -Infinity) - (logDate(a.log.data)?.getTime() ?? -Infinity) || 0);
   warnMissingRepeats(journal);
   return journal;
 }
@@ -274,23 +279,30 @@ export const byRelease = (a: CollectionEntry<'works'>, b: CollectionEntry<'works
   };
   return key(b) - key(a) || a.data.title.localeCompare(b.data.title, 'fr');
 };
-/** Années du journal, de la plus récente à la plus ancienne. */
+/** Années du journal, de la plus récente à la plus ancienne (sans les séries vues à une date oubliée). */
 export const journalYears = (journal: { log: { data: Parameters<typeof logDate>[0] } }[]) =>
-  [...new Set(journal.map(({ log }) => logDate(log.data).getUTCFullYear()))].sort((a, b) => b - a);
+  [...new Set(journal.flatMap(({ log }) => logDate(log.data)?.getUTCFullYear() ?? []))].sort((a, b) => b - a);
+/** Entrées de l'année `year` (aucune série vue à une date oubliée). */
+export const inJournalYear = (year: number) => ({ log }: { log: { data: Parameters<typeof logDate>[0] } }) =>
+  logDate(log.data)?.getUTCFullYear() === year;
 
 /**
  * Épisodes vus, d'après les jours de visionnage (une saison peut chevaucher deux années), et leur durée totale en minutes
  * (épisodes dont la durée est renseignée) : pendant l'année `year`, ou depuis le début du journal sans `year`.
  * Un avis sur une série entière (daté de l'année) compte tous les épisodes de toutes ses saisons.
+ * Une saison ou une série vue à une date oubliée ne compte que depuis le début du journal.
  */
 export const episodeTotals = (journal: JournalEntry[], year?: number) => {
-  const inYear = (d?: Date) => Boolean(d) && (year === undefined || d!.getUTCFullYear() === year);
+  const inYear = (d?: Date) => year === undefined || d?.getUTCFullYear() === year;
+  const all = (s: Season) => Array.from({ length: s.episodes }, (_, i) => s.runtimes[i] ?? 0);
   return journal.flatMap(({ log, work, season }) => season
-    ? log.data.watched
-      .filter(({ date }) => inYear(date))
-      .flatMap(({ episodes }) => episodes.map((n) => season.runtimes[n - 1] ?? 0))
-    : work.data.type === 'serie' && inYear(log.data.date)
-      ? work.data.seasons.flatMap((s) => Array.from({ length: s.episodes }, (_, i) => s.runtimes[i] ?? 0))
+    ? log.data.undated
+      ? year === undefined ? all(season) : []
+      : log.data.watched
+        .filter(({ date }) => inYear(date))
+        .flatMap(({ episodes }) => episodes.map((n) => season.runtimes[n - 1] ?? 0))
+    : work.data.type === 'serie' && (log.data.date || log.data.undated) && inYear(log.data.date)
+      ? work.data.seasons.flatMap(all)
       : [])
     .reduce((t, runtime) => ({ episodes: t.episodes + 1, episodeMinutes: t.episodeMinutes + runtime }), { episodes: 0, episodeMinutes: 0 });
 };

@@ -163,17 +163,16 @@ const logs = defineCollection({
     }, { errorMap: strict })
     .strict()
     // `date` devient le premier jour de la période connue (tri, bilans) ; `datePrecision` dit ce qui est connu, pour l'affichage.
+    // `undated` : ni date, ni début, ni épisodes vus : une série vue il y a longtemps, à une date oubliée (voir getJournal).
     .transform(({ date, ...l }) => ({
       ...l,
       date: date && toDate(date),
       datePrecision: (!date || date.day ? 'day' : date.month ? 'month' : 'year') as DatePrecision,
+      undated: !date && !l.started && !l.watched.length,
     }))
     .superRefine((l, ctx) => {
       if (l.abandoned && !l.date) {
         ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée `abandoned` doit avoir une `date` (le jour de l’arrêt).' });
-      }
-      if (!l.date && !l.started && !l.watched.length) {
-        ctx.addIssue({ code: 'custom', path: ['date'], message: 'Une entrée doit avoir une `date` (fin), un `started` (début de lecture) ou des épisodes `watched`.' });
       }
       if (l.started && l.date && l.started > periodEnd(l.date, l.datePrecision)) {
         ctx.addIssue({ code: 'custom', path: ['started'], message: '`started` doit précéder `date`.' });

@@ -3,12 +3,12 @@ import LikeIcon from './LikeIcon.astro';
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
 import Stars from './Stars.astro';
-import { href, capitalize, fmtDate, fmtPeriod, isoDate, type DatePrecision, repeatLabel } from '../lib/content';
+import { href, capitalize, fmtDate, fmtPeriod, isoDate, type DatePrecision, repeatLabel, undatedLabel } from '../lib/content';
 // Ligne d'un passage sur la fiche d'œuvre (à la Letterboxd) : date, note, informations, icônes de like, de revisionnage et de review.
 // `period` : affiche la période (« Du 3 au 8 octobre 2026 ») plutôt que la seule date de fin.
 // `extras` : colonnes d'informations (lieu, version, langue…). Le slot `status` remplace « — » quand l'entrée n'est pas notée.
 interface Props {
-  log: { id: string; body?: string; data: { date?: Date; datePrecision?: DatePrecision; started?: Date; rating?: number; liked: boolean; repeat: boolean } };
+  log: { id: string; body?: string; data: { date?: Date; datePrecision?: DatePrecision; started?: Date; undated: boolean; rating?: number; liked: boolean; repeat: boolean } };
   type: 'film' | 'livre' | 'serie';
   period?: boolean;
   extras?: string[];
@@ -18,7 +18,8 @@ const l = log.data;
 ---
 <li>
   <a class="date" href={href(`/journal/${log.id}/`)}>
-    {period ? capitalize(fmtPeriod(l)) : <time datetime={isoDate(l.date!, l.datePrecision)}>{fmtDate(l.date!, l.datePrecision)}</time>}
+    {l.undated ? undatedLabel
+    : period ? capitalize(fmtPeriod(l)) : <time datetime={isoDate(l.date!, l.datePrecision)}>{fmtDate(l.date!, l.datePrecision)}</time>}
   </a>
   {l.rating !== undefined
     ? <Stars rating={l.rating} type={type} />

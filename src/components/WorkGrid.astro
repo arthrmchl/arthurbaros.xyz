@@ -8,9 +8,11 @@ import Stars from './Stars.astro';
 // `image` : remplace l'affiche (celle d'une saison) ; `rank` : position dans un classement, devant la note.
 interface Props { items: { work: CollectionEntry<'works'>; rating?: number; liked?: boolean; badge?: string; image?: string; rank?: number }[] }
 const { items } = Astro.props;
+// Dès qu'une affiche a une légende, toutes en ont une (vide au besoin) : les affiches restent alignées sur la même ligne.
+const captioned = items.some(({ rating, liked, rank }) => rating !== undefined || liked || rank !== undefined);
 ---
 <ul class="posters">
-  {items.map(({ work, rating, liked, badge, image, rank }) => rating !== undefined || liked || rank !== undefined
+  {items.map(({ work, rating, liked, badge, image, rank }) => captioned
     ? <Poster work={work} badge={badge} image={image}>
         <span class="rated">
           {rank !== undefined && <span class="rank">{rank}</span>}
@@ -24,7 +26,7 @@ const { items } = Astro.props;
 <style>
   .posters { list-style: none; padding: 0; margin: 1.5rem 0; display: grid;
     grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem; align-items: end; }
-  .rated { display: flex; align-items: center; gap: 0.35rem; }
+  .rated { display: flex; align-items: center; gap: 0.35rem; min-height: 1lh; }
   .rank { font: 600 0.85rem var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
   @media (max-width: 34rem) {
     .posters { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }

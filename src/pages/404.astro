@@ -4,7 +4,7 @@ import EntryList from '../components/EntryList.astro';
 import { getJournal, href } from '../lib/content';
 
 // Servie par GitHub Pages pour toute adresse inconnue : on propose de quoi rebondir.
-const latest = (await getJournal()).slice(0, 5);
+const latest = (await getJournal()).filter(({ log }) => !log.data.undated).slice(0, 5);
 ---
 <Base title="Page introuvable" description="Cette page n’existe pas ou a changé d’adresse." noindex>
   <h1>Page introuvable</h1>

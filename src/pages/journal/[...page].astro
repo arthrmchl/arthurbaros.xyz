@@ -2,15 +2,16 @@
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
 import Pagination from '../../components/Pagination.astro';
-import { getJournal, journalYears, href, logDate, pageSize, pageSuffix, paginate, type JournalEntry } from '../../lib/content';
+import { getJournal, journalYears, inJournalYear, href, pageSize, pageSuffix, paginate, type JournalEntry } from '../../lib/content';
 
 // Toutes les entrées, de la plus récente à la plus ancienne, par pages ; sur chaque page, regroupées par année avec un lien vers le bilan.
+// Les séries vues à une date oubliée n'y figurent pas (seulement sur leur fiche).
 export async function getStaticPaths() {
-  const journal = await getJournal();
+  const journal = (await getJournal()).filter(({ log }) => !log.data.undated);
   return paginate(journal, pageSize.journal).map(({ page, ...props }) => ({ params: { page }, props: { ...props, total: journal.length } }));
 }
 const { items, current, last, total } = Astro.props as { items: JournalEntry[]; current: number; last: number; total: number };
-const years = journalYears(items).map((year) => ({ year, entries: items.filter(({ log }) => logDate(log.data).getUTCFullYear() === year) }));
+const years = journalYears(items).map((year) => ({ year, entries: items.filter(inJournalYear(year)) }));
 const count = `${total} ${total > 1 ? 'entrées' : 'entrée'}`;
 const suffix = pageSuffix(current, last);
 ---

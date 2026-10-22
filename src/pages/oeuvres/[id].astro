@@ -6,7 +6,7 @@ import Stars from '../../components/Stars.astro';
 import ViewingRow from '../../components/ViewingRow.astro';
 import People from '../../components/People.astro';
 import { workPageSchema } from '../../lib/schema';
-import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtDate, fmtShortDate, fmtYears, capitalize, abandonedLabel, imageLabel, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute } from '../../lib/content';
+import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtOn, fmtShortDate, isoDate, fmtYears, capitalize, abandonedLabel, imageLabel, inProgress, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute, type DatePrecision } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -29,15 +29,26 @@ const released = fmtReleased(w);
 const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} (${years}) : fiche et ${w.type === 'livre' ? 'lectures' : 'visionnages'}.`;
 
 // Séries : pour chaque saison, ses entrées de journal (la plus récente d'abord) et la date
-// du dernier visionnage de chaque épisode, tous passages confondus.
+// du dernier visionnage de chaque épisode, tous passages confondus. Un avis sur la série entière
+// date tous ses épisodes (à sa précision : `2026` -> « 2026 ») ; une entrée vue à une date oubliée les marque vus, sans date.
+const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
+type Seen = { date?: Date; precision: DatePrecision };
 const seasons = w.seasons.map((s) => {
   const logs = entries.filter((e) => e.season?.number === s.number);
-  const seen = new Map<number, Date>();
-  for (const e of logs) for (const [n, d] of e.season!.seen) if (!seen.has(n)) seen.set(n, d);
-  return { ...s, logs, seen, aired: fmtAired(s), ongoing: logs.some((e) => !e.log.data.date) };
+  const seen = new Map<number, Seen>();
+  const mark = (n: number, v: Seen) => {
+    const cur = seen.get(n);
+    if (!cur || (v.date && (!cur.date || v.date > cur.date))) seen.set(n, v);
+  };
+  const all = (v: Seen) => { for (let n = 1; n <= s.episodes; n++) mark(n, v); };
+  for (const e of logs) {
+    for (const [n, date] of e.season!.seen) mark(n, { date, precision: 'day' });
+    if (e.log.data.undated) all({ precision: 'day' });
+  }
+  for (const { log } of seriesReviews) all({ date: log.data.date, precision: log.data.datePrecision });
+  return { ...s, logs, seen, aired: fmtAired(s), ongoing: logs.some((e) => inProgress(e.log.data)) };
 });
 const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
-const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
 // Aperçu lors du partage : pas de couverture pour un livre, l'image du site à la place.
 ---
 <Base title={`${w.title} (${years}), ${w.creator}`} description={description} jsonLd={workPageSchema(work, Astro.site!)}
@@ -85,22 +96,25 @@ const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
               <div>
                 {s.aired && !s.only && <p class="meta">{s.aired}</p>}
                 <ol class="episodes">
-                  {Array.from({ length: s.episodes }, (_, i) => i + 1).map((n) => (
-                    <li class:list={{ seen: s.seen.has(n) }}>
-                      <span class="num">{n}</span>
-                      <span class="ep-title">{s.titles[n - 1] ?? `Épisode ${n}`}</span>
-                      {s.runtimes[n - 1] ? <span class="meta ep-runtime">{fmtRuntime(s.runtimes[n - 1]!)}</span> : <span />}
-                      {s.seen.has(n)
-                        ? <time class="meta" datetime={s.seen.get(n)!.toISOString().slice(0, 10)} title={`Vu le ${fmtDate(s.seen.get(n)!)}`}>{fmtShortDate(s.seen.get(n)!)}</time>
-                        : <span />}
-                    </li>
-                  ))}
+                  {Array.from({ length: s.episodes }, (_, i) => i + 1).map((n) => {
+                    const { date, precision } = s.seen.get(n) ?? {};
+                    return (
+                      <li class:list={{ seen: s.seen.has(n) }}>
+                        <span class="num">{n}</span>
+                        <span class="ep-title">{s.titles[n - 1] ?? `Épisode ${n}`}</span>
+                        {s.runtimes[n - 1] ? <span class="meta ep-runtime">{fmtRuntime(s.runtimes[n - 1]!)}</span> : <span />}
+                        {date
+                          ? <time class="meta" datetime={isoDate(date, precision)} title={`Vu ${fmtOn(date, precision)}`}>{fmtShortDate(date, precision)}</time>
+                          : <span />}
+                      </li>
+                    );
+                  })}
                 </ol>
                 {s.logs.length > 0 && (
                   <ul class="viewings readings">
                     {s.logs.map(({ log, season }) => (
                       <ViewingRow log={log} type="serie" period extras={[log.data.version ? versionLabel[log.data.version] : '—']}>
-                        <Fragment slot="status">{log.data.abandoned ? abandonedLabel(season) : !log.data.date ? <>En cours<span class="sep">·</span>{season!.seen.size}/{season!.episodes}</> : '—'}</Fragment>
+                        <Fragment slot="status">{log.data.abandoned ? abandonedLabel(season) : inProgress(log.data) ? <>En cours<span class="sep">·</span>{season!.seen.size}/{season!.episodes}</> : '—'}</Fragment>
                       </ViewingRow>
                     ))}
                   </ul>

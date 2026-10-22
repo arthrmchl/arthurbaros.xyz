@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import EntryList from '../../components/EntryList.astro';
 import YearStats from '../../components/YearStats.astro';
-import { getJournal, journalYears, logDate, episodeTotals, statsSummary, href } from '../../lib/content';
+import { getJournal, journalYears, inJournalYear, episodeTotals, statsSummary, href } from '../../lib/content';
 
 export async function getStaticPaths() {
   const journal = await getJournal();
@@ -10,7 +10,7 @@ export async function getStaticPaths() {
     params: { year: String(year) },
     props: {
       year,
-      entries: journal.filter(({ log }) => logDate(log.data).getUTCFullYear() === year),
+      entries: journal.filter(inJournalYear(year)),
       ...episodeTotals(journal, year),
     },
   }));
