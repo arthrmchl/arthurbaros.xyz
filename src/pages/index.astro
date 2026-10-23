@@ -6,7 +6,7 @@ import RepeatIcon from '../components/RepeatIcon.astro';
 import ReviewIcon from '../components/ReviewIcon.astro';
 import Stars from '../components/Stars.astro';
 import { site } from '../lib/site';
-import { getJournal, journalYears, latestByWork, href, posterImage, fmtDate, fmtShortDate, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
+import { getJournal, journalYears, latestByWork, href, posterImage, fmtShortDate, fmtSince, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
 
 const journal = await getJournal();
 const years = journalYears(journal);
@@ -30,7 +30,7 @@ const shelves = ([
       <div>
         <p class="meta">
           {season ? 'En train de regarder' : 'En train de lire'}
-          {log.data.started && <> depuis le {fmtDate(log.data.started)}</>}
+          {log.data.started && <> {fmtSince(log.data.started, log.data.startedPrecision)}</>}
         </p>
         <p class="title">{work.data.title}</p>
         {season

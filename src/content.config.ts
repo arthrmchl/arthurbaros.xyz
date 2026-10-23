@@ -27,6 +27,7 @@ const released = z
 
 // Précision d'une date d'entrée de journal : `2026` (année), `2026-10` (mois) ou `2026-10-08` (jour).
 type DatePrecision = 'year' | 'month' | 'day';
+const precisionOf = (r: { month?: number; day?: number }): DatePrecision => (r.day ? 'day' : r.month ? 'month' : 'year');
 const toDate = (r: { year: number; month?: number; day?: number }) => {
   const d = new Date(Date.UTC(2000, (r.month ?? 1) - 1, r.day ?? 1));
   d.setUTCFullYear(r.year);
@@ -147,7 +148,9 @@ const logs = defineCollection({
     .object({
       work: reference('works'),
       season: optional(z.number().int().positive()), // saison suivie (séries) ; absente pour un avis sur toute la série
-      watched: z.array(z.object({ date: z.coerce.date(), episodes })).default([]), // épisodes vus, jour par jour (saisons)
+      // épisodes vus, jour par jour (saisons) ; la date peut être imprécise : `2026` ou `2026-10` si le jour est oublié
+      watched: z.array(z.object({ date: released, episodes })
+        .transform(({ date, episodes }) => ({ date: toDate(date), precision: precisionOf(date), episodes }))).default([]),
       started: optional(z.coerce.date()),       // début de lecture (livres)
       date: optional(released),                 // date du visionnage / de la fin de lecture (absente si lecture en cours) : `2026`, `2026-10` ou `2026-10-08`
       rating: optional(z.number().int('La note est un nombre entier de 0 à 5.').min(0).max(5)), // optionnelle ; absente si lecture en cours
@@ -167,7 +170,8 @@ const logs = defineCollection({
     .transform(({ date, ...l }) => ({
       ...l,
       date: date && toDate(date),
-      datePrecision: (!date || date.day ? 'day' : date.month ? 'month' : 'year') as DatePrecision,
+      datePrecision: date ? precisionOf(date) : 'day',
+      startedPrecision: 'day' as DatePrecision, // une saison commencée un jour imprécis le précise (voir getJournal)
       undated: !date && !l.started && !l.watched.length,
     }))
     .superRefine((l, ctx) => {

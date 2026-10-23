@@ -8,7 +8,7 @@ import { href, capitalize, fmtDate, fmtPeriod, isoDate, type DatePrecision, repe
 // `period` : affiche la période (« Du 3 au 8 octobre 2026 ») plutôt que la seule date de fin.
 // `extras` : colonnes d'informations (lieu, version, langue…). Le slot `status` remplace « — » quand l'entrée n'est pas notée.
 interface Props {
-  log: { id: string; body?: string; data: { date?: Date; datePrecision?: DatePrecision; started?: Date; undated: boolean; rating?: number; liked: boolean; repeat: boolean } };
+  log: { id: string; body?: string; data: { date?: Date; datePrecision?: DatePrecision; started?: Date; startedPrecision?: DatePrecision; undated: boolean; rating?: number; liked: boolean; repeat: boolean } };
   type: 'film' | 'livre' | 'serie';
   period?: boolean;
   extras?: string[];

@@ -21,6 +21,8 @@ export const fmtDate = (d: Date, precision: DatePrecision = 'day') =>
   : d.toLocaleDateString('fr-FR', { ...(precision === 'day' ? { day: 'numeric' } : {}), month: 'long', year: 'numeric', timeZone: 'UTC' });
 /** « le 8 octobre 2026 », « en octobre 2026 » ou « en 2026 ». */
 export const fmtOn = (d: Date, precision: DatePrecision = 'day') => `${precision === 'day' ? 'le' : 'en'} ${fmtDate(d, precision)}`;
+/** « depuis le 8 octobre 2026 », « depuis octobre 2026 » ou « depuis 2026 ». */
+export const fmtSince = (d: Date, precision: DatePrecision = 'day') => `depuis ${precision === 'day' ? 'le ' : ''}${fmtDate(d, precision)}`;
 /** `2026-10-08`, `2026-10` ou `2026` : attribut `datetime` d'une balise <time>, données structurées. */
 export const isoDate = (d: Date, precision: DatePrecision = 'day') =>
   d.toISOString().slice(0, { year: 4, month: 7, day: 10 }[precision]);
@@ -44,12 +46,13 @@ export const fmtRange = (from: Date, to: Date) => {
 };
 /**
  * Période d'une entrée : « le 8 octobre 2026 », « du 3 au 8 octobre 2026 », ou « depuis le 3 octobre 2026 » si elle est en cours.
- * Une date de fin imprécise s'affiche seule : « en octobre 2026 », « en 2026 ».
+ * Une date de fin imprécise, ou un début imprécis, laisse la fin seule : « en octobre 2026 », « en 2026 », « le 8 octobre 2026 ».
  */
-export const fmtPeriod = (l: { started?: Date; date?: Date; datePrecision?: DatePrecision }) =>
-  l.started && l.date && l.datePrecision === 'day' && l.started.getTime() !== l.date.getTime() ? fmtRange(l.started, l.date)
+export const fmtPeriod = (l: { started?: Date; startedPrecision?: DatePrecision; date?: Date; datePrecision?: DatePrecision }) =>
+  l.started && l.date && l.datePrecision === 'day' && (l.startedPrecision ?? 'day') === 'day' && l.started.getTime() !== l.date.getTime()
+    ? fmtRange(l.started, l.date)
   : l.date ? fmtOn(l.date, l.datePrecision)
-  : `depuis le ${fmtDate(l.started!)}`;
+  : fmtSince(l.started!, l.startedPrecision);
 /** « français » -> « Français » */
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export const fmtRating = (n: number) => `${n}/5`;
@@ -107,6 +110,9 @@ export const fmtEpisodes = (list: number[]) => {
  * Aucune pour une série vue à une date oubliée (`undated`).
  */
 export const logDate = (l: { date?: Date; started?: Date; watched?: { date: Date }[] }) => l.date ?? l.watched?.at(-1)?.date ?? l.started;
+/** Précision de `logDate` : un jour de visionnage peut n'être connu qu'au mois ou à l'année près. */
+export const logPrecision = (l: { date?: Date; datePrecision?: DatePrecision; startedPrecision?: DatePrecision; watched?: { precision: DatePrecision }[] }): DatePrecision =>
+  l.date ? l.datePrecision ?? 'day' : l.watched?.at(-1)?.precision ?? l.startedPrecision ?? 'day';
 /** L'entrée a un texte (review ou accroche) : sinon sa page n'est pas proposée aux moteurs de recherche (voir aussi astro.config.mjs). */
 export const hasText = (log: { body?: string; data: { summary?: string } }) => Boolean(log.body?.trim() || log.data.summary?.trim());
 /** Lecture ou saison commencée mais pas terminée (une série vue à une date oubliée n'a pas de date, mais elle est finie). */
@@ -125,8 +131,8 @@ export const slugify = (s: string) =>
 export type Season = CollectionEntry<'works'>['data']['seasons'][number];
 
 /**
- * Saison suivie : sa fiche, et les épisodes vus (date du dernier passage pour chacun).
- * Le début et la fin du suivi se déduisent des jours de visionnage : la saison est terminée
+ * Saison suivie : sa fiche, et les épisodes vus (date du dernier passage pour chacun, et sa précision).
+ * Le début et la fin du suivi se déduisent des jours de visionnage (et leur précision : `2026` si seule l'année est connue) : la saison est terminée
  * quand tous ses épisodes ont été vus, ou plus tôt si elle est `abandoned` (la `date` est alors celle de l'arrêt).
  */
 function followSeason(log: CollectionEntry<'logs'>, work: CollectionEntry<'works'>) {
@@ -134,14 +140,14 @@ function followSeason(log: CollectionEntry<'logs'>, work: CollectionEntry<'works
   const l = log.data;
   const season = work.data.seasons.find((s) => s.number === l.season)
     ?? fail(`la saison ${l.season} n'existe pas dans la fiche \`${work.id}\`.`);
-  const seen = new Map<number, Date>();
-  for (const { date, episodes } of l.watched) {
+  const seen = new Map<number, { date: Date; precision: DatePrecision }>();
+  for (const { date, precision, episodes } of l.watched) {
     for (const n of episodes) {
       if (n > season.episodes) fail(`l'épisode ${n} dépasse les ${season.episodes} épisodes de la saison ${season.number}.`);
-      seen.set(n, date);
+      seen.set(n, { date, precision });
     }
   }
-  const last = l.watched.at(-1)?.date;
+  const first = l.watched[0], last = l.watched.at(-1);
   const complete = l.undated || seen.size === season.episodes; // vue à une date oubliée : vue en entier
   if (l.date && !complete && !l.abandoned) {
     const missing = Array.from({ length: season.episodes }, (_, i) => i + 1).filter((n) => !seen.has(n));
@@ -149,7 +155,13 @@ function followSeason(log: CollectionEntry<'logs'>, work: CollectionEntry<'works
   }
   if (l.abandoned && complete) fail('tous les épisodes ont été vus : la saison ne peut pas être `abandoned`.');
   return {
-    data: { ...l, started: l.started ?? l.watched[0]?.date, date: l.date ?? (complete ? last : undefined) },
+    data: {
+      ...l,
+      started: l.started ?? first?.date,
+      startedPrecision: l.started || !first ? l.startedPrecision : first.precision,
+      date: l.date ?? (complete ? last?.date : undefined),
+      datePrecision: l.date || !complete || !last ? l.datePrecision : last.precision,
+    },
     season: { ...season, seen, complete },
   };
 }

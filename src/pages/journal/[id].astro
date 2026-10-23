@@ -5,7 +5,7 @@ import LikeIcon from '../../components/LikeIcon.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, isoDate, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -27,8 +27,8 @@ const poster = season?.poster ?? w.poster;
 const e = season ? 'e' : ''; // accord avec « la saison »
 const when =
   l.undated ? undatedLabel
-  : ongoing ? `Commencé${e} le ${fmtDate(l.started!)}`
-  : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} le ${fmtDate(l.started)}, arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
+  : ongoing ? `Commencé${e} ${fmtOn(l.started!, l.startedPrecision)}`
+  : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} ${fmtOn(l.started, l.startedPrecision)}, arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : l.abandoned ? `Arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : season ? `Vue ${fmtPeriod(l)}`
   : w.type === 'serie' ? l.datePrecision === 'day' ? `Avis du ${fmtDate(l.date!)}` : `Vue ${fmtOn(l.date!, l.datePrecision)}`
@@ -97,9 +97,9 @@ const pills = (!isLivre
         <section class="watched">
           <h2>Épisodes vus <span class="meta">{season.seen.size}/{season.episodes}</span></h2>
           <ul>
-            {l.watched.map(({ date, episodes }) => (
+            {l.watched.map(({ date, precision, episodes }) => (
               <li>
-                <time class="meta" datetime={date.toISOString().slice(0, 10)}>{fmtShortDate(date)}</time>
+                <time class="meta" datetime={isoDate(date, precision)}>{fmtShortDate(date, precision)}</time>
                 <ol>
                   {episodes.map((n) => <li><span class="num">{n}</span>{season.titles[n - 1] ?? `Épisode ${n}`}</li>)}
                 </ol>

@@ -42,7 +42,7 @@ const seasons = w.seasons.map((s) => {
   };
   const all = (v: Seen) => { for (let n = 1; n <= s.episodes; n++) mark(n, v); };
   for (const e of logs) {
-    for (const [n, date] of e.season!.seen) mark(n, { date, precision: 'day' });
+    for (const [n, v] of e.season!.seen) mark(n, v);
     if (e.log.data.undated) all({ precision: 'day' });
   }
   for (const { log } of seriesReviews) all({ date: log.data.date, precision: log.data.datePrecision });

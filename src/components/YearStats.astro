@@ -1,6 +1,6 @@
 ---
 import LikeIcon from './LikeIcon.astro';
-import { fmtRuntime, capitalize, latestByWork, logDate, inProgress, href } from '../lib/content';
+import { fmtRuntime, capitalize, latestByWork, logDate, logPrecision, inProgress, href } from '../lib/content';
 // Bilan chiffré d'une année : une tuile par type d'œuvre et une pour les notes (avec les coups de cœur), puis la frise des mois.
 // Sans `year`, bilan de tout le journal : la frise montre les années, chacune liée à son bilan, et rien n'est à filtrer en dessous.
 // `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues,
@@ -10,7 +10,7 @@ interface Props {
   year?: number;
   entries: {
     work: { id: string; data: { type: Kind; runtime?: number; seasons: { number: number }[] } };
-    log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; undated: boolean; watched?: { date: Date }[]; rating?: number; liked: boolean; abandoned: boolean;
+    log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; undated: boolean; watched?: { date: Date; precision: 'year' | 'month' | 'day' }[]; rating?: number; liked: boolean; abandoned: boolean;
       venue?: 'cinema' | 'maison'; version?: 'vf' | 'vostfr'; accompanied?: boolean; language?: string } };
     season?: { number: number; complete: boolean };
   }[];
@@ -90,7 +90,7 @@ const SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août
 const KINDS: { kind: Kind; one: string; many: string }[] = [
   { kind: 'film', one: 'film', many: 'films' }, { kind: 'serie', one: 'série', many: 'séries' }, { kind: 'livre', one: 'livre', many: 'livres' },
 ];
-const dated = entries.filter((e) => !e.log.data.undated && (year === undefined || e.log.data.datePrecision !== 'year'));
+const dated = entries.filter((e) => !e.log.data.undated && (year === undefined || logPrecision(e.log.data) !== 'year'));
 const kinds = KINDS.filter(({ kind }) => dated.some((e) => e.work.data.type === kind));
 const stack = (list: typeof entries) => kinds.map((k) => ({ ...k, n: count(list, (e) => e.work.data.type === k.kind) }));
 // Année en cours (à la date du build) : les mois à venir sont dessinés à part, pour ne pas passer pour des mois vides.

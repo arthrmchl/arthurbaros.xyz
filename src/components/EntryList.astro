@@ -3,12 +3,12 @@ import LikeIcon from './LikeIcon.astro';
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
 import Stars from './Stars.astro';
-import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, typeLabel, logDate, isoDate, repeatLabel, seasonLabel } from '../lib/content';
+import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, typeLabel, logDate, logPrecision, isoDate, repeatLabel, seasonLabel } from '../lib/content';
 interface Props { entries: JournalEntry[]; showType?: boolean }
 const { entries, showType = true } = Astro.props;
 
 // Journal à la Letterboxd : le mois n'est affiché qu'à la première entrée de chaque mois.
-// Une date connue au mois ou à l'année près n'a pas de jour : son mois (ou son année) est toujours affiché.
+// Une date connue au mois ou à l'année près (fin, ou dernier jour de visionnage d'une saison en cours) n'a pas de jour : son mois (ou son année) est toujours affiché.
 // Les séries vues à une date oubliée n'ont pas de date : elles ne sont jamais passées ici.
 const sameYear = new Set(entries.map(({ log }) => logDate(log.data)!.getUTCFullYear())).size <= 1;
 const monthOf = (d: Date) =>
@@ -16,7 +16,7 @@ const monthOf = (d: Date) =>
 let prev: string | undefined;
 const rows = entries.map((e) => {
   const d = logDate(e.log.data)!;
-  const precision = e.log.data.date ? e.log.data.datePrecision : 'day';
+  const precision = logPrecision(e.log.data);
   const label = precision === 'year' ? String(d.getUTCFullYear()) : monthOf(d);
   const month = precision !== 'day' || label !== prev ? label : undefined;
   prev = label;
