@@ -1,12 +1,15 @@
 ---
 import { href, slugify } from '../lib/content';
-// Noms de réalisateur·ices, auteur·ices ou créateur·ices, chacun menant à sa page.
-interface Props { names: string[] }
-const { names } = Astro.props;
+// Noms de réalisateur·ices, auteur·ices ou créateur·ices, chacun menant à sa page, suivi de son rôle s'il est précisé
+// (« Juan Díaz Canales (scénario), Juanjo Guarnido (dessin) ») ; une personne à deux rôles n'apparaît qu'une fois.
+interface Props { credits: { name: string; role?: string }[] }
+const people = Object.entries(Object.groupBy(Astro.props.credits, (c) => c.name))
+  .map(([name, list]) => ({ name, roles: list!.flatMap((c) => c.role ?? []) }));
 ---
-{names.map((name, i) => <>{i > 0 && ', '}<a class="person" href={href(`/personnes/${slugify(name)}/`)}>{name}</a></>)}
+{people.map(({ name, roles }, i) => <>{i > 0 && ', '}<a class="person" href={href(`/personnes/${slugify(name)}/`)}>{name}</a>{roles.length > 0 && <span class="role"> ({roles.join(', ')})</span>}</>)}
 
 <style>
   .person { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
   .person:hover { text-decoration-color: currentColor; }
+  .role { color: var(--muted); }
 </style>

@@ -3,11 +3,11 @@ import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Pagination from '../../components/Pagination.astro';
 import WorkGrid from '../../components/WorkGrid.astro';
-import { byRelease, getJournal, inProgress, latestByWork, pageSize, pageSuffix, paginate, todoLabel } from '../../lib/content';
+import { byRelease, getBookSeries, getJournal, href, inProgress, kindNoun, latestByWork, pageSize, pageSuffix, paginate, seriesUrl, todoLabel, type Format } from '../../lib/content';
 
 // Œuvres vues ou lues puis œuvres à voir / à lire, à la suite, par pages : la section « À voir » commence sur la page où elle tombe.
 export async function getStaticPaths() {
-  const [journal, all] = await Promise.all([getJournal(), getCollection('works')]);
+  const [journal, all, series] = await Promise.all([getJournal(), getCollection('works'), getBookSeries()]);
   return ([
     { type: 'films', kind: 'film', title: 'Films' },
     { type: 'livres', kind: 'livre', title: 'Livres' },
@@ -25,13 +25,17 @@ export async function getStaticPaths() {
       .sort(byRelease)
       .map((work) => ({ work, reading: false, todo: true }));
     const reading = works.filter((w) => w.reading).length;
+    // Livres : combien de BD, de mangas et de comics parmi les livres lus ou en cours.
+    const formats = (['bd', 'manga', 'comics'] as Format[])
+      .map((format) => [works.filter(({ work }) => work.data.format === format).length, kindNoun({ type: 'livre', format })] as const)
+      .filter(([n]) => n > 0).map(([n, [, one, many]]) => `${n} ${n > 1 ? many : one}`);
     return paginate([...works, ...todo], pageSize.works).map(({ page, ...props }) => ({
       params: { type, page },
-      props: { ...props, kind, title, done: works.length - reading, reading, todoCount: todo.length },
+      props: { ...props, kind, title, done: works.length - reading, reading, todoCount: todo.length, formats, series: kind === 'livre' ? series.map(({ name }) => name) : [] },
     }));
   });
 }
-const { kind, title, items, current, last, done, reading, todoCount } = Astro.props;
+const { kind, title, items, current, last, done, reading, todoCount, formats, series } = Astro.props;
 const works = items.filter((i) => !i.todo);
 const todo = items.filter((i) => i.todo);
 const noun = { film: ['film', 'films'], livre: ['livre', 'livres'], serie: ['série', 'séries'] }[kind];
@@ -45,6 +49,8 @@ const suffix = pageSuffix(current, last);
 <Base title={`${title}${suffix}`} description={`${intro}, avec mes notes et mes avis : ${count}${suffix}.`}>
   <h1>{title}</h1>
   <p class="meta">{counts.length ? counts.map((c, i) => <>{i > 0 && <span class="sep">·</span>}{c}</>) : count}</p>
+  {formats.length > 0 && <p class="meta">Dont {formats.map((f, i) => <>{i > 0 && <span class="sep">·</span>}{f}</>)}</p>}
+  {series.length > 0 && current === 1 && <p class="meta">Séries : {series.map((name, i) => <>{i > 0 && <span class="sep">·</span>}<a href={href(seriesUrl(name))}>{name}</a></>)}</p>}
   {works.length > 0 && <WorkGrid items={works.map(({ work, reading }) => ({ work, badge: reading ? 'En cours' : undefined }))} />}
   {todo.length > 0 && (
     <>

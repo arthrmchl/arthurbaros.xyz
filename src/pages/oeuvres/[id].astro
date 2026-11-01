@@ -6,7 +6,7 @@ import Stars from '../../components/Stars.astro';
 import ViewingRow from '../../components/ViewingRow.astro';
 import People from '../../components/People.astro';
 import { workPageSchema } from '../../lib/schema';
-import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtOn, fmtShortDate, isoDate, fmtYears, capitalize, abandonedLabel, imageLabel, inProgress, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute, type DatePrecision } from '../../lib/content';
+import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtOn, fmtShortDate, isoDate, fmtYears, capitalize, abandonedLabel, imageLabel, inProgress, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute, formatLabel, seriesUrl, type DatePrecision } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -26,7 +26,7 @@ const { Content } = await render(work);
 const w = work.data;
 const years = fmtYears(w);
 const released = fmtReleased(w);
-const description = excerpt(work.body) || `${typeLabel[w.type]} de ${w.creator} (${years}) : fiche et ${w.type === 'livre' ? 'lectures' : 'visionnages'}.`;
+const description = excerpt(work.body) || `${w.format ? formatLabel[w.format] : typeLabel[w.type]} de ${w.creator} (${years}) : fiche et ${w.type === 'livre' ? 'lectures' : 'visionnages'}.`;
 
 // Séries : pour chaque saison, ses entrées de journal (la plus récente d'abord) et la date
 // du dernier visionnage de chaque épisode, tous passages confondus. Un avis sur la série entière
@@ -67,12 +67,14 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
       <header class="title-line">
         <h1>{w.title}</h1>
         {w.originalTitle && <span class="original-title">{w.originalTitle}</span>}
-        <span class="meta"><People names={w.creators} />&nbsp;– {years}</span>
+        <span class="meta"><People credits={w.credits} />&nbsp;– {years}</span>
+        {w.series && <span class="meta series"><a href={href(seriesUrl(w.series))}>{w.series}</a>{w.volume !== undefined && <>, tome {w.volume}</>}</span>}
       </header>
       <div class="prose"><Content /></div>
-      {(w.runtime || released || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
+      {(w.runtime || w.format || released || w.originalLanguage || w.seasons.length > 0 || w.firstAired || w.tags.length > 0) && (
         <div class="details">
           {w.runtime && <p class="meta">{fmtRuntime(w.runtime)}</p>}
+          {w.format && <p class="meta">{formatLabel[w.format]}</p>}
           {w.seasons.length > 0 && <p class="meta">{w.seasons.length > 1 && <>{w.seasons.length} saisons<span class="sep">·</span></>}{episodeCount} {episodeCount > 1 ? 'épisodes' : 'épisode'}</p>}
           {w.firstAired && <p class="meta">{fmtAired(w)}</p>}
           {released && <p class="meta">{released}</p>}
@@ -229,6 +231,9 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
   /* Seule saison : pas de ligne de titre repliable, la liste suit le titre de section. */
   .season.only { border: none; }
   .season.only .season-body { padding-left: 0; }
+
+  /* Série et tome d'un livre : sur sa propre ligne, sous les auteur·ices. */
+  .title-line .series { flex-basis: 100%; }
 
   /* Listes où figure l'œuvre : titre, puis rang et saison éventuels. */
   .in-lists { list-style: none; padding: 0; margin: 1rem 0; }

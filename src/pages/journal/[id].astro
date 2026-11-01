@@ -5,7 +5,7 @@ import LikeIcon from '../../components/LikeIcon.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, isoDate, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, isoDate, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel, seriesUrl } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -78,7 +78,8 @@ const pills = (!isLivre
         <div class="title-line">
           <h1><a href={href(`/oeuvres/${work.id}/`)}>{w.title}</a>{seasonName && <><span class="sep">·</span>{seasonName}</>}</h1> <span class="meta">{shownYears}</span>
         </div>
-        {!isFilm && <p class="meta">de <People names={w.creators} /></p>}
+        {!isFilm && <p class="meta">de <People credits={w.credits} /></p>}
+        {w.series && <p class="meta"><a href={href(seriesUrl(w.series))}>{w.series}</a>{w.volume !== undefined && <>, tome {w.volume}</>}</p>}
         {l.rating !== undefined || l.liked
           ? <p class="rating-big">
               {l.rating !== undefined && <Stars rating={l.rating} type={w.type} />}

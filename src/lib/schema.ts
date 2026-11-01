@@ -1,7 +1,7 @@
 // Données structurées schema.org (JSON-LD) : décrivent les œuvres et les reviews aux moteurs de recherche,
 // qui peuvent alors afficher la note sous le lien.
 import type { CollectionEntry } from 'astro:content';
-import { href, excerpt, slugify, isoDate, type DatePrecision, type Season } from './content';
+import { href, excerpt, slugify, isoDate, seriesUrl, type DatePrecision, type Season } from './content';
 import { site } from './site';
 
 type Work = CollectionEntry<'works'>;
@@ -16,6 +16,20 @@ const persons = (names: string[], origin: URL) => names.map((name) => ({ '@type'
 const isoReleased = (r: { year: number; month?: number; day?: number }) =>
   [String(r.year), r.month && String(r.month).padStart(2, '0'), r.day && String(r.day).padStart(2, '0')].filter(Boolean).join('-');
 
+/**
+ * Personnes créditées, selon leur rôle : réalisation (director), écriture ou scénario (author), création (creator),
+ * dessin et illustration (illustrator), couleurs (contributor).
+ */
+const credits = (w: Work['data'], origin: URL) => {
+  const property = (role?: string) =>
+    role === 'dessin' || role === 'illustration' ? 'illustrator'
+    : role === 'couleurs' ? 'contributor'
+    : role === 'scénario' ? 'author'
+    : { film: 'director', livre: 'author', serie: 'creator' }[w.type];
+  const groups = Object.groupBy(w.credits, (c) => property(c.role));
+  return Object.fromEntries(Object.entries(groups).map(([key, list]) => [key, persons([...new Set(list!.map((c) => c.name))], origin)]));
+};
+
 /** Une œuvre : Movie, Book ou TVSeries, avec ses créateurs, sa date de sortie et ses genres. */
 export function workSchema(work: Work, origin: URL) {
   const w = work.data;
@@ -26,7 +40,8 @@ export function workSchema(work: Work, origin: URL) {
     ...(w.originalTitle ? { alternateName: w.originalTitle } : {}),
     url: absolute(`/oeuvres/${work.id}/`, origin),
     ...(image ? { image: absolute(image, origin) } : {}),
-    [{ film: 'director', livre: 'author', serie: 'creator' }[w.type]]: persons(w.creators, origin),
+    ...credits(w, origin),
+    ...(w.series ? { isPartOf: { '@type': 'BookSeries', name: w.series, url: absolute(seriesUrl(w.series), origin) }, ...(w.volume ? { position: w.volume } : {}) } : {}),
     datePublished: w.released ? isoReleased(w.released) : day(w.firstAired!),
     ...(w.tags.length ? { genre: w.tags } : {}),
     ...(w.runtime ? { duration: `PT${w.runtime}M` } : {}),

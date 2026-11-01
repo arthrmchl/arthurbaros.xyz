@@ -1,0 +1,38 @@
+---
+import Base from '../../../layouts/Base.astro';
+import People from '../../../components/People.astro';
+import WorkGrid from '../../../components/WorkGrid.astro';
+import { getBookSeries, getJournal, inProgress, kindNoun, lastRated, latestByWork } from '../../../lib/content';
+
+// Une page par série de livres (champ `series` des fiches) : ses tomes dans l'ordre, lus, en cours ou à lire.
+export async function getStaticPaths() {
+  const [series, journal] = await Promise.all([getBookSeries(), getJournal()]);
+  return series.map(({ slug, name, books }) => {
+    const ids = new Set(books.map((b) => b.id));
+    const latest = new Map(latestByWork(journal.filter(({ work }) => ids.has(work.id))).map((e) => [e.work.id, e.log.data]));
+    // Lu : au moins une lecture terminée (pas seulement abandonnée).
+    const read = new Set(journal.filter(({ work, log }) => ids.has(work.id) && log.data.date && !log.data.abandoned).map(({ work }) => work.id));
+    const items = books.map((work) => {
+      const last = lastRated(journal, work.id);
+      const reading = latest.has(work.id) && inProgress(latest.get(work.id)!);
+      const badge = [work.data.volume !== undefined ? `Tome ${work.data.volume}` : 'Hors-série', reading && 'En cours'].filter(Boolean).join(' · ');
+      return { work, rating: last?.rating, liked: last?.liked, badge };
+    });
+    const reading = books.filter((b) => latest.has(b.id) && inProgress(latest.get(b.id)!)).length;
+    return { params: { series: slug }, props: { name, books, items, read: read.size, reading } };
+  });
+}
+const { name, books, items, read, reading } = Astro.props;
+// « 5 BD » si tous les livres ont le même format, « 5 livres » sinon.
+const formats = new Set(books.map((b) => b.data.format));
+const [, one, many] = kindNoun({ type: 'livre', format: formats.size === 1 ? books[0].data.format : undefined });
+const counts = [`${books.length} ${books.length > 1 ? many : one}`, read && `${read} ${read > 1 ? 'lus' : 'lu'}`, reading && `${reading} en cours`].filter(Boolean);
+// Toutes les personnes créditées sur la série, une fois par rôle.
+const credits = [...new Map(books.flatMap((b) => b.data.credits).map((c) => [`${c.name}/${c.role ?? ''}`, c])).values()];
+---
+<Base title={name} description={`${name}, série de ${books.length} ${books.length > 1 ? many : one} : ${books.map((b) => b.data.title).join(', ')}.`}>
+  <h1>{name}</h1>
+  <p class="meta"><People credits={credits} /></p>
+  <p class="meta">{counts.map((c, i) => <>{i > 0 && <span class="sep">·</span>}{c}</>)}</p>
+  <WorkGrid items={items} />
+</Base>

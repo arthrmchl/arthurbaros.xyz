@@ -9,7 +9,7 @@ type Kind = 'film' | 'livre' | 'serie';
 interface Props {
   year?: number;
   entries: {
-    work: { id: string; data: { type: Kind; runtime?: number; seasons: { number: number }[] } };
+    work: { id: string; data: { type: Kind; format?: 'bd' | 'manga' | 'comics'; runtime?: number; seasons: { number: number }[] } };
     log: { data: { date?: Date; datePrecision?: 'year' | 'month' | 'day'; started?: Date; undated: boolean; watched?: { date: Date; precision: 'year' | 'month' | 'day' }[]; rating?: number; liked: boolean; abandoned: boolean;
       venue?: 'cinema' | 'maison'; version?: 'vf' | 'vostfr'; accompanied?: boolean; language?: string } };
     season?: { number: number; complete: boolean };
@@ -40,8 +40,12 @@ const seasonsDone = count(seasons, (e) => Boolean(e.season?.complete))
 // Séries terminées : vues en entier (avis sur la série) ou dont la dernière saison a été finie ; une série ne compte qu'une fois.
 const seriesDone = new Set(entries.filter((e) => e.work.data.type === 'serie'
   && (e.season ? e.season.complete && e.season.number === e.work.data.seasons.at(-1)?.number : true)).map((e) => e.work)).size;
-const books = entries.filter((e) => e.work.data.type === 'livre').map((e) => e.log.data);
+const books = entries.filter((e) => e.work.data.type === 'livre').map((e) => ({ ...e.log.data, format: e.work.data.format }));
 const booksRead = count(books, (b) => Boolean(b.date) && !b.abandoned);
+// Parmi les livres lus : bandes dessinées, mangas et comics.
+const formats = split([[count(books, (b) => b.format === 'bd' && Boolean(b.date) && !b.abandoned), 'BD'],
+  [count(books, (b) => b.format === 'manga' && Boolean(b.date) && !b.abandoned), 'manga', 'mangas'],
+  [count(books, (b) => b.format === 'comics' && Boolean(b.date) && !b.abandoned), 'comics']]);
 const languages = Object.entries(Object.groupBy(books.filter((b) => b.language), (b) => b.language!))
   .map(([lang, list]) => [list!.length, `en ${lang}`] as [number, string]);
 
@@ -69,6 +73,7 @@ const tiles = [
   books.length > 0 && {
     kind: 'livre', value: booksRead, label: booksRead > 1 ? 'livres lus' : 'livre lu',
     lines: [
+      formats.length > 0 && [`Dont ${formats[0]}`, ...formats.slice(1)],
       split([[count(books, (b) => !b.date), 'en cours'], [likedOf('livre'), ...LIKES], [count(books, (b) => b.abandoned), 'abandonné', 'abandonnés']]),
       split(languages),
     ],

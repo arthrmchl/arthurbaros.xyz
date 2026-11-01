@@ -74,6 +74,19 @@ const genre = z.string().refine((g): g is Genre => (genres as readonly string[])
   message: `Genre inconnu : « ${g} ». Genres possibles : ${genres.join(', ')} (liste dans src/lib/genres.ts).`,
 }));
 
+// Rôle d'une personne dans une œuvre, quand le préciser a du sens (bandes dessinées surtout).
+export const roles = ['scénario', 'dessin', 'couleurs', 'illustration'] as const;
+// Personne créditée : son nom, ou `{ name, role }` pour préciser son rôle.
+// Le rôle est vérifié après l'union : un rôle inconnu donne un message clair plutôt qu'un « Did not match union ».
+const credit = z
+  .union([
+    z.string().min(1).transform((name) => ({ name, role: undefined })),
+    z.object({ name: z.string().min(1), role: z.string() }, { errorMap: strict }).strict(),
+  ])
+  .refine((c): c is { name: string; role: (typeof roles)[number] | undefined } => c.role === undefined || (roles as readonly string[]).includes(c.role), (c) => ({
+    message: `Rôle inconnu : « ${c.role} ». Rôles possibles : ${roles.join(', ')}.`,
+  }));
+
 // Fiche d'œuvre : stable, une seule par film, livre ou série.
 const works = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/works', generateId }),
@@ -82,7 +95,10 @@ const works = defineCollection({
       title: z.string(),                // titre français
       originalTitle: z.preprocess((v) => v || undefined, z.string().optional()), // titre original, si différent
       type: z.enum(['film', 'livre', 'serie']),
-      creators: z.array(z.string().min(1)).nonempty('Ajoute au moins un nom dans `creators`.'), // réalisateur·ices, auteur·ices ou créateur·ices
+      creators: z.array(credit).nonempty('Ajoute au moins un nom dans `creators`.'), // réalisateur·ices, auteur·ices ou créateur·ices, avec leur rôle éventuel
+      format: optional(z.enum(['bd', 'manga', 'comics'])), // livres : bande dessinée, manga ou comics (absent : livre)
+      series: optional(z.string().min(1)),   // livres : série dont le livre fait partie, ex. « Blacksad »
+      volume: optional(z.number().int().positive()), // livres : numéro du tome dans la série (absent pour un hors-série)
       released: optional(released),     // sortie (films) / publication (livres) : `2026`, `2026-10` ou `2026-10-08`
       firstAired: optional(z.coerce.date()), // début de diffusion (séries)
       lastAired: optional(z.coerce.date()),  // fin de diffusion (séries) : vide si toujours diffusée
@@ -98,6 +114,18 @@ const works = defineCollection({
       if (w.released === undefined && !(w.type === 'serie' && w.firstAired)) {
         ctx.addIssue({ code: 'custom', path: ['released'], message: w.type === 'serie' ? 'Une série doit avoir un `firstAired` (ou un `released`).' : '`released` manquant (ex. 2026, 2026-10 ou 2026-10-08).' });
       }
+      for (const field of ['format', 'series', 'volume'] as const) {
+        if (w.type !== 'livre' && w[field] !== undefined) {
+          ctx.addIssue({ code: 'custom', path: [field], message: `Seul un livre a un \`${field}\`.` });
+        }
+      }
+      if (w.volume !== undefined && w.series === undefined) {
+        ctx.addIssue({ code: 'custom', path: ['volume'], message: 'Un `volume` (numéro de tome) va avec une `series`.' });
+      }
+      const credited = w.creators.map((c) => `${c.name}/${c.role ?? ''}`);
+      if (new Set(credited).size !== credited.length) {
+        ctx.addIssue({ code: 'custom', path: ['creators'], message: 'Une personne apparaît deux fois avec le même rôle dans `creators`.' });
+      }
       if (w.type !== 'serie' && w.seasons.length) {
         ctx.addIssue({ code: 'custom', path: ['seasons'], message: 'Seule une série a des `seasons`.' });
       }
@@ -111,13 +139,16 @@ const works = defineCollection({
         }
       }
     })
+    // `credits` : les personnes avec leur rôle ; `creators` : leurs noms, une seule fois chacun (une personne peut avoir deux rôles).
     // `creator` : les noms à la suite, pour les affichages en texte (« Mark Frost, David Lynch »).
     // Un titre original identique au titre français n'est pas affiché.
     // `year` (année de sortie, de publication ou de début de diffusion) sert aux affichages courts.
     // `only` : seule saison de la série, dont le numéro n'est alors jamais affiché.
-    .transform((w) => ({
+    .transform(({ creators, ...w }) => ({
       ...w,
-      creator: w.creators.join(', '),
+      credits: creators,
+      creators: [...new Set(creators.map((c) => c.name))],
+      creator: [...new Set(creators.map((c) => c.name))].join(', '),
       originalTitle: w.originalTitle !== w.title ? w.originalTitle : undefined,
       year: (w.released?.year ?? w.firstAired?.getUTCFullYear())!,
       seasons: w.seasons.map((s, i) => ({ ...s, number: s.number ?? i + 1, only: w.seasons.length === 1 })),

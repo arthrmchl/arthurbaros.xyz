@@ -3,7 +3,7 @@ import LikeIcon from './LikeIcon.astro';
 import RepeatIcon from './RepeatIcon.astro';
 import ReviewIcon from './ReviewIcon.astro';
 import Stars from './Stars.astro';
-import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, typeLabel, logDate, logPrecision, isoDate, repeatLabel, seasonLabel } from '../lib/content';
+import { type JournalEntry, href, posterImage, abandonedLabel, fmtYears, kindLabel, logDate, logPrecision, isoDate, repeatLabel, seasonLabel } from '../lib/content';
 interface Props { entries: JournalEntry[]; showType?: boolean }
 const { entries, showType = true } = Astro.props;
 
@@ -42,7 +42,7 @@ const rows = entries.map((e) => {
           <a class="name" href={href(`/journal/${log.id}/`)}>{work.data.title}{seasonName && <><span class="sep">·</span>{seasonName}</>}</a>
           <span class="meta">
             {work.data.creator}<span class="inline-year">, {fmtYears(work.data)}</span>
-            {showType && <> — <span class={`kind-${work.data.type}`}>{typeLabel[work.data.type]}</span></>}
+            {showType && <> — <span class={`kind-${work.data.type}`}>{kindLabel(work.data)}</span></>}
           </span>
           {log.data.summary && <p class="summary">{log.data.summary}</p>}
         </div>

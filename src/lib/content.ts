@@ -10,7 +10,25 @@ export const verb = { film: 'Vu', livre: 'Lu', serie: 'Vu' } as const;
 export const todoLabel = { film: 'À voir', livre: 'À lire', serie: 'À voir' } as const;
 /** Revisionnage / relecture, selon le type d'œuvre. */
 export const repeatLabel = { film: 'Revisionnage', livre: 'Relecture', serie: 'Revisionnage' } as const;
-export const venueLabel = { cinema: 'Au cinéma', maison: 'À la maison' } as const;
+/** Format d'un livre : bande dessinée, manga ou comics. */
+export const formatLabel = { bd: 'Bande dessinée', manga: 'Manga', comics: 'Comics' } as const;
+export type Format = keyof typeof formatLabel;
+/** « Film », « Livre », « Série », ou le format d'un livre en court (« BD », « Manga », « Comics ») : étiquette du journal. */
+export const kindLabel = (w: { type: keyof typeof typeLabel; format?: Format }) =>
+  w.format ? { bd: 'BD', manga: 'Manga', comics: 'Comics' }[w.format] : typeLabel[w.type];
+/** Article, singulier et pluriel : « un film », « une BD », « 2 mangas ». */
+export const kindNoun = (w: { type: keyof typeof typeLabel; format?: Format }) =>
+  ({ film: ['un', 'film', 'films'], serie: ['une', 'série', 'séries'], livre: ['un', 'livre', 'livres'],
+    bd: ['une', 'BD', 'BD'], manga: ['un', 'manga', 'mangas'], comics: ['un', 'comics', 'comics'] } as const)[w.format ?? w.type];
+/** Rôle d'une personne, affiché sur sa page : celui de `creators`, sinon celui que donne le type d'œuvre. */
+export const roleLabel = (role: string | undefined, type: keyof typeof typeLabel) =>
+  role ? capitalize(role) : { film: 'Réalisation', serie: 'Création', livre: 'Écriture' }[type];
+/** « Blacksad, tome 3 », « Blacksad » (hors-série) ; rien hors d'une série. */
+export const volumeLabel = (w: { series?: string; volume?: number }) =>
+  w.series && `${w.series}${w.volume !== undefined ? `, tome ${w.volume}` : ''}`;
+/** Adresse de la page d'une série de livres. */
+export const seriesUrl = (series: string) => `/livres/series/${slugify(series)}/`;
+export const venueLabel ={ cinema: 'Au cinéma', maison: 'À la maison' } as const;
 export const versionLabel = { vf: 'VF', vostfr: 'VOSTFR' } as const;
 
 /** Précision d'une date d'entrée : `2026` (année), `2026-10` (mois) ou `2026-10-08` (jour). */
@@ -291,6 +309,25 @@ export const byRelease = (a: CollectionEntry<'works'>, b: CollectionEntry<'works
   };
   return key(b) - key(a) || a.data.title.localeCompare(b.data.title, 'fr');
 };
+/**
+ * Séries de livres (champ `series` des fiches), par ordre alphabétique, avec leurs livres : tomes dans l'ordre, puis hors-séries par date de publication.
+ * Deux orthographes d'une même série (« Blacksad » et « blacksad ») ou deux fiches pour le même tome font échouer le build.
+ */
+export async function getBookSeries() {
+  const works = (await getCollection('works')).filter((w) => w.data.series);
+  const groups = Object.groupBy(works, (w) => slugify(w.data.series!));
+  return Object.entries(groups).map(([slug, list]) => {
+    const names = [...new Set(list!.map((w) => w.data.series!))];
+    if (names.length > 1) throw new Error(`works : la série « ${names.join(' » et « ')} » est écrite de plusieurs façons dans \`series\`.`);
+    const volumes = list!.flatMap((w) => w.data.volume ?? []);
+    const twice = volumes.find((v, i) => volumes.indexOf(v) !== i);
+    if (twice !== undefined) throw new Error(`works : deux fiches sont le tome ${twice} de « ${names[0]} ».`);
+    const books = list!.toSorted((a, b) => (a.data.volume ?? Infinity) - (b.data.volume ?? Infinity) || -byRelease(a, b));
+    return { slug, name: names[0], books };
+  }).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+}
+export type BookSeries = Awaited<ReturnType<typeof getBookSeries>>[number];
+
 /** Années du journal, de la plus récente à la plus ancienne (sans les séries vues à une date oubliée). */
 export const journalYears = (journal: { log: { data: Parameters<typeof logDate>[0] } }[]) =>
   [...new Set(journal.flatMap(({ log }) => logDate(log.data)?.getUTCFullYear() ?? []))].sort((a, b) => b - a);
