@@ -2,11 +2,13 @@
 import { getCollection } from 'astro:content';
 import { href } from '../lib/content';
 import { site } from '../lib/site';
-// Polices servies par le site (pas d'appel à Google Fonts) : Newsreader variable (graisse et taille optique), Instrument Sans 400 et 600.
+// Polices servies par le site (pas d'appel à Google Fonts) : Newsreader variable (graisse et taille optique), Instrument Sans 400 et 600,
+// Archivo variable (graisse et chasse) pour le nom du site.
 import '@fontsource-variable/newsreader/opsz.css';
 import '@fontsource-variable/newsreader/opsz-italic.css';
 import '@fontsource/instrument-sans/400.css';
 import '@fontsource/instrument-sans/600.css';
+import '@fontsource-variable/archivo/wdth.css';
 // `shareTitle`, `image` et `imageAlt` : aperçu affiché lors du partage d'un lien (Open Graph).
 // `largeImage` : grande image au-dessus de l'aperçu (image paysage) plutôt qu'une vignette.
 // `published` : date de publication d'un article (review).
@@ -125,7 +127,8 @@ const imageUrl = new URL(image.startsWith('/') ? href(image) : image, Astro.site
   /* Logo recadré sur ses formes (sans le fond du favicon), à la hauteur des majuscules et jambages. */
   .brand .logo { display: block; height: 1.1em; width: calc(1.1em * 27 / 14); }
   /* Remonte le nom pour que le logo soit à peu près centré sur ses minuscules (hampes et jambages ignorés). */
-  .brand span { position: relative; top: -0.05em; }
+  /* Nom en Archivo Expanded ExtraBold, proche du wordmark d'Apple Music (police d'Apple non libre). */
+  .brand span { position: relative; top: -0.05em; font-family: 'Archivo Variable', var(--sans); font-weight: 800; font-stretch: 125%; }
   .site-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.95rem; }
   .menu-toggle { display: none; padding: 0.5rem; margin: -0.5rem; border: 0; background: none; color: inherit; cursor: pointer; }
   .menu-toggle:focus-visible { outline: 2px solid var(--film); outline-offset: 2px; }

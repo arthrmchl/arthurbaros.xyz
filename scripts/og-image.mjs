@@ -7,8 +7,8 @@ import { loadFont, textPath } from './font-path.mjs';
 
 const paper = '#eef1ec', ink = '#17232b', film = '#1d5c78', livre = '#66661c', serie = '#8a3d36';
 const width = 1200, height = 630;
-// Police du nom dans le header (Instrument Sans 600), fournie dans scripts/fonts/.
-const font = loadFont(fileURLToPath(new URL('./fonts/InstrumentSans-SemiBold.ttf', import.meta.url)));
+// Police du nom dans le header (Archivo, graisse 800 et chasse 125 %), instance statique fournie dans scripts/fonts/.
+const font = loadFont(fileURLToPath(new URL('./fonts/ArchivoExpanded-ExtraBold.ttf', import.meta.url)));
 
 // Cotes du header, pour une taille de police F :
 // logo haut de 1.1 F, espace de 0.6rem pour un nom en 1.05rem, nom en line-height 1 centré sur le logo puis remonté de 0.05 F.
