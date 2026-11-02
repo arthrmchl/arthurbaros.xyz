@@ -6,7 +6,7 @@ import Stars from '../../components/Stars.astro';
 import ViewingRow from '../../components/ViewingRow.astro';
 import People from '../../components/People.astro';
 import { workPageSchema } from '../../lib/schema';
-import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtOn, fmtShortDate, isoDate, fmtYears, capitalize, abandonedLabel, imageLabel, inProgress, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, todoLabel, typeLabel, typeRoute, formatLabel, seriesUrl, type DatePrecision } from '../../lib/content';
+import { getJournal, getLists, excerpt, backdropImage, posterImage, fmtRuntime, href, fmtAired, fmtReleased, fmtOn, fmtShortDate, isoDate, fmtYears, capitalize, abandonedLabel, inProgress, slugify, seasonLabel, seasonSuffix, venueLabel, versionLabel, kinds, formatLabel, seriesUrl, type DatePrecision } from '../../lib/content';
 
 export async function getStaticPaths() {
   const [works, journal] = await Promise.all([getCollection('works'), getJournal()]);
@@ -26,12 +26,13 @@ const { Content } = await render(work);
 const w = work.data;
 const years = fmtYears(w);
 const released = fmtReleased(w);
-const description = excerpt(work.body) || `${w.format ? formatLabel[w.format] : typeLabel[w.type]} de ${w.creator} (${years}) : fiche et ${w.type === 'livre' ? 'lectures' : 'visionnages'}.`;
+const kind = kinds[w.type];
+const description = excerpt(work.body) || `${w.format ? formatLabel[w.format] : kind.label} de ${w.creator} (${years}) : fiche et ${kind.passages}.`;
 
 // Séries : pour chaque saison, ses entrées de journal (la plus récente d'abord) et la date
 // du dernier visionnage de chaque épisode, tous passages confondus. Un avis sur la série entière
 // date tous ses épisodes (à sa précision : `2026` -> « 2026 ») ; une entrée vue à une date oubliée les marque vus, sans date.
-const seriesReviews = entries.filter((e) => w.type === 'serie' && !e.season);
+const seriesReviews = entries.filter((e) => kind.seasons && !e.season);
 type Seen = { date?: Date; precision: DatePrecision };
 const seasons = w.seasons.map((s) => {
   const logs = entries.filter((e) => e.season?.number === s.number);
@@ -52,14 +53,14 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
 // Aperçu lors du partage : pas de couverture pour un livre, l'image du site à la place.
 ---
 <Base title={`${w.title} (${years}), ${w.creator}`} description={description} jsonLd={workPageSchema(work, Astro.site!)}
-  image={backdropImage(w.backdrop) ?? (w.type === 'livre' ? undefined : w.poster)} imageAlt={w.backdrop ? `Image ${w.type === 'film' ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  image={backdropImage(w.backdrop) ?? (kind.sharePoster ? w.poster : undefined)} imageAlt={w.backdrop ? `Image ${kind.of} ${w.title}` : `${kind.image} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Structure à la Letterboxd : affiche à gauche, informations à droite. -->
   <article class:list={['sheet', { 'has-hero': w.backdrop }]}>
     {w.poster && (
       <aside class="side">
-        <img class="poster" {...posterImage(w.poster, '9rem')} alt={`${imageLabel(w.type)} : ${w.title}`} />
+        <img class="poster" {...posterImage(w.poster, '9rem')} alt={`${kind.image} : ${w.title}`} />
       </aside>
     )}
 
@@ -85,7 +86,7 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
     </div>
   </article>
 
-  {w.type === 'serie' && (
+  {kind.seasons && (
     <>
       {entries.length === 0 && <p class="notice">Pas encore commencée : dans ma liste <a href={href('/series/')}>à voir</a>.</p>}
       {seasons.length > 1 && <h2>Saisons</h2>}
@@ -151,9 +152,9 @@ const episodeCount = w.seasons.reduce((n, s) => n + s.episodes, 0);
     </>
   )}
 
-  {w.type === 'serie' ? null
+  {kind.seasons ? null
     : entries.length === 0
-    ? <p class="notice">Pas encore {w.type === 'film' ? 'vu' : 'commencé'} : dans ma liste <a href={href(`/${typeRoute[w.type]}/`)}>{todoLabel[w.type].toLowerCase()}</a>.</p>
+    ? <p class="notice">Pas encore {kind.inProgress ? 'commencé' : kind.participle[0]} : dans ma liste <a href={href(`/${kind.route}/`)}>{kind.todo.toLowerCase()}</a>.</p>
     : w.type === 'film'
     ? <>
         <h2>Mes visionnages</h2>

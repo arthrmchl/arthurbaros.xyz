@@ -2,6 +2,7 @@ import { defineCollection, reference, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { basename } from 'node:path';
 import { genres, type Genre } from './lib/genres';
+import { kindIds } from './lib/kinds';
 
 // L'identifiant d'une entrée = son nom de fichier sans extension (ex. "parasite").
 const generateId = ({ entry }: { entry: string }) => basename(entry).replace(/\.md$/, '');
@@ -94,7 +95,7 @@ const works = defineCollection({
     .object({
       title: z.string(),                // titre français
       originalTitle: z.preprocess((v) => v || undefined, z.string().optional()), // titre original, si différent
-      type: z.enum(['film', 'livre', 'serie']),
+      type: z.enum(kindIds),            // types dans src/lib/kinds.ts
       creators: z.array(credit).nonempty('Ajoute au moins un nom dans `creators`.'), // réalisateur·ices, auteur·ices ou créateur·ices, avec leur rôle éventuel
       format: optional(z.enum(['bd', 'manga', 'comics'])), // livres : bande dessinée, manga ou comics (absent : livre)
       series: optional(z.string().min(1)),   // livres : série dont le livre fait partie, ex. « Blacksad »
@@ -233,7 +234,7 @@ const lists = defineCollection({
   schema: z
     .object({
       title: z.string(),
-      type: optional(z.enum(['film', 'livre', 'serie'])), // absent : liste mixte
+      type: optional(z.enum(kindIds)), // absent : liste mixte
       ranked: z.boolean().default(false),      // classement numéroté
       created: z.coerce.date(),                // création de la liste
       updated: optional(z.coerce.date()),      // dernière mise à jour

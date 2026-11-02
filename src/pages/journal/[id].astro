@@ -5,7 +5,7 @@ import LikeIcon from '../../components/LikeIcon.astro';
 import Stars from '../../components/Stars.astro';
 import People from '../../components/People.astro';
 import { reviewSchema } from '../../lib/schema';
-import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, isoDate, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, imageLabel, seasonLabel, seasonSuffix, verb, venueLabel, versionLabel, seriesUrl } from '../../lib/content';
+import { getJournal, hasText, href, excerpt, backdropImage, posterImage, fmtDate, fmtOn, fmtShortDate, fmtPeriod, isoDate, fmtStars, fmtYears, inProgress, undatedLabel, abandonedLabel, kinds, seasonLabel, seasonSuffix, venueLabel, versionLabel, seriesUrl } from '../../lib/content';
 
 export async function getStaticPaths() {
   return (await getJournal()).map((entry) => ({ params: { id: entry.log.id }, props: entry }));
@@ -16,6 +16,7 @@ const w = work.data;
 const l = log.data;
 const isFilm = w.type === 'film';
 const isLivre = w.type === 'livre';
+const kind = kinds[w.type];
 const ongoing = inProgress(l);
 const years = fmtYears(w);
 // À côté du titre : la période de diffusion de la saison si elle est connue, sinon celle de la série.
@@ -31,8 +32,8 @@ const when =
   : l.abandoned && l.started && l.started < l.date! ? `Commencé${e} ${fmtOn(l.started, l.startedPrecision)}, arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : l.abandoned ? `Arrêté${e} ${fmtOn(l.date!, l.datePrecision)}`
   : season ? `Vue ${fmtPeriod(l)}`
-  : w.type === 'serie' ? l.datePrecision === 'day' ? `Avis du ${fmtDate(l.date!)}` : `Vue ${fmtOn(l.date!, l.datePrecision)}`
-  : `${verb[w.type]} ${fmtPeriod(l)}`;
+  : kind.seasons ? l.datePrecision === 'day' ? `Avis du ${fmtDate(l.date!)}` : `Vue ${fmtOn(l.date!, l.datePrecision)}`
+  : `${kind.verb} ${fmtPeriod(l)}`;
 
 // Aperçu lors du partage du lien : accroche ou début de la review, backdrop pour les films.
 // Pas de couverture pour un livre : l'aperçu prend l'image du site.
@@ -60,7 +61,7 @@ const pills = (!isLivre
 ---
 <Base title={`Review de ${w.title}${seasonSuffix(season)} (${shownYears}), ${w.creator}`} description={shareDescription} shareTitle={shareTitle} article published={l.date ?? l.started}
   noindex={!hasText(log)} jsonLd={reviewSchema(log, work, season, Astro.site!)}
-  image={backdropImage(w.backdrop) ?? (isLivre ? undefined : poster)} imageAlt={w.backdrop ? `Image ${isFilm ? 'du film' : 'de la série'} ${w.title}` : `${imageLabel(w.type)} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
+  image={backdropImage(w.backdrop) ?? (kind.sharePoster ? poster : undefined)} imageAlt={w.backdrop ? `Image ${kind.of} ${w.title}` : `${kind.image} : ${w.title}`} largeImage={Boolean(w.backdrop)}>
   {w.backdrop && <div class="hero"><img src={backdropImage(w.backdrop)} alt="" /></div>}
 
   <!-- Même structure que la fiche d'œuvre : affiche à gauche, review à droite. -->
@@ -68,7 +69,7 @@ const pills = (!isLivre
     {poster && (
       <aside class="side">
         <a href={href(`/oeuvres/${work.id}/`)}>
-          <img class="poster" {...posterImage(poster, '9rem')} alt={`${imageLabel(w.type)} : ${w.title}${seasonSuffix(season)}`} />
+          <img class="poster" {...posterImage(poster, '9rem')} alt={`${kind.image} : ${w.title}${seasonSuffix(season)}`} />
         </a>
       </aside>
     )}
@@ -86,7 +87,7 @@ const pills = (!isLivre
               {l.liked && <LikeIcon type={w.type} />}
             </p>
           : (ongoing || l.abandoned) && <p class="ongoing" style={`--accent: var(--${w.type})`}>
-              {l.abandoned ? abandonedLabel(season) : season ? <>saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : 'Lecture en cours'}
+              {l.abandoned ? abandonedLabel(season) : season ? <>saison en cours<span class="sep">·</span>{season.seen.size}/{season.episodes} épisodes</> : kind.ongoing}
             </p>}
         <p class="meta">{when}</p>
       </header>
@@ -114,7 +115,7 @@ const pills = (!isLivre
         {pills.map((v) => <span class={`pill is-${w.type}`}>{v}</span>)}
       </div>
 
-      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et tous {isLivre ? 'mes lectures' : 'mes visionnages'}</a></p>
+      <p class="meta back"><a href={href(`/oeuvres/${work.id}/`)}>Voir la fiche et {kind.allPassages}</a></p>
     </div>
   </article>
 </Base>

@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Pagination from '../../components/Pagination.astro';
-import { excerpt, fmtListCount, getJournal, getLists, href, listTypeLabel, pageSize, pageSuffix, paginate, posterImage, type ListEntry } from '../../lib/content';
+import { excerpt, fmtListCount, getJournal, getLists, href, kindIds, listTypeLabel, pageSize, pageSuffix, paginate, posterImage, type ListEntry } from '../../lib/content';
 
 // Toutes les listes, la plus récemment mise à jour d'abord, par pages, avec un aperçu de leurs premières affiches.
 export async function getStaticPaths() {
@@ -10,7 +10,7 @@ export async function getStaticPaths() {
 }
 const { items: lists, current, last, total } = Astro.props as { items: ListEntry[]; current: number; last: number; total: number };
 // Le filtre agit sur la page affichée : seuls les médias qui y figurent ont un bouton.
-const kinds = (['film', 'livre', 'serie', 'mixte'] as const).filter((k) => lists.some(({ list }) => (list.data.type ?? 'mixte') === k));
+const filters = ([...kindIds, 'mixte'] as const).filter((k) => lists.some(({ list }) => (list.data.type ?? 'mixte') === k));
 const count = `${total} ${total > 1 ? 'listes' : 'liste'}`;
 const suffix = pageSuffix(current, last);
 ---
@@ -18,9 +18,9 @@ const suffix = pageSuffix(current, last);
   <h1>Listes</h1>
   <p class="meta">{total ? count : 'Aucune liste pour l’instant.'}</p>
 
-  {kinds.length > 1 && (
+  {filters.length > 1 && (
     <div class="filters" role="group" aria-label="Filtrer par média">
-      {kinds.map((k) => <button type="button" class:list={['pill', `is-${k}`]} data-kind={k} aria-pressed="false">{listTypeLabel[k]}</button>)}
+      {filters.map((k) => <button type="button" class:list={['pill', `is-${k}`]} data-kind={k} aria-pressed="false">{listTypeLabel(k)}</button>)}
     </div>
   )}
 
@@ -41,7 +41,7 @@ const suffix = pageSuffix(current, last);
             <span class="text">
               <span class="title">{l.title}</span>
               <span class="meta">
-                <span class:list={['pill', `is-${kind}`]}>{listTypeLabel[kind]}</span>
+                <span class:list={['pill', `is-${kind}`]}>{listTypeLabel(kind)}</span>
                 <span class="sep">·</span>{l.ranked ? `Classement, ${fmtListCount(items.length, l.type)}` : fmtListCount(items.length, l.type)}
               </span>
               {list.body?.trim() && <span class="excerpt">{excerpt(list.body, 160)}</span>}

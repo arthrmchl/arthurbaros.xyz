@@ -1,11 +1,10 @@
 ---
 import LikeIcon from './LikeIcon.astro';
-import { fmtRuntime, capitalize, latestByWork, logDate, logPrecision, inProgress, href } from '../lib/content';
+import { fmtRuntime, capitalize, latestByWork, logDate, logPrecision, inProgress, href, kinds, kindIds, type Kind } from '../lib/content';
 // Bilan chiffré d'une année : une tuile par type d'œuvre et une pour les notes (avec les coups de cœur), puis la frise des mois.
 // Sans `year`, bilan de tout le journal : la frise montre les années, chacune liée à son bilan, et rien n'est à filtrer en dessous.
 // `entries` : les entrées de l'année (voir getJournal) ; `episodes` : épisodes vus dans l'année, saisons confondues,
 // et `episodeMinutes` leur durée totale (épisodes dont la durée est renseignée).
-type Kind = 'film' | 'livre' | 'serie';
 interface Props {
   year?: number;
   entries: {
@@ -92,12 +91,13 @@ const avg = ratings.length ? (ratings.reduce((s, r) => s + r, 0) / ratings.lengt
 // Une série vue à une date oubliée reste hors des deux frises.
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-const KINDS: { kind: Kind; one: string; many: string }[] = [
-  { kind: 'film', one: 'film', many: 'films' }, { kind: 'serie', one: 'série', many: 'séries' }, { kind: 'livre', one: 'livre', many: 'livres' },
-];
+// Ordre d'empilement dans la frise (les séries entre les films et les livres) : chaque type doit y figurer.
+const STACK_ORDER: Record<Kind, number> = { film: 0, serie: 1, livre: 2 };
+const KINDS = kindIds.toSorted((a, b) => STACK_ORDER[a] - STACK_ORDER[b])
+  .map((kind) => ({ kind, one: kinds[kind].noun[1], many: kinds[kind].noun[2] }));
 const dated = entries.filter((e) => !e.log.data.undated && (year === undefined || logPrecision(e.log.data) !== 'year'));
-const kinds = KINDS.filter(({ kind }) => dated.some((e) => e.work.data.type === kind));
-const stack = (list: typeof entries) => kinds.map((k) => ({ ...k, n: count(list, (e) => e.work.data.type === k.kind) }));
+const legend = KINDS.filter(({ kind }) => dated.some((e) => e.work.data.type === kind));
+const stack = (list: typeof entries) => legend.map((k) => ({ ...k, n: count(list, (e) => e.work.data.type === k.kind) }));
 // Année en cours (à la date du build) : les mois à venir sont dessinés à part, pour ne pas passer pour des mois vides.
 const now = new Date();
 const lastMonth = year === now.getUTCFullYear() ? now.getUTCMonth() : 11;
@@ -166,7 +166,7 @@ const maxColumn = Math.max(1, ...columns.map((m) => m.total));
 
   <figure class="timeline">
     <figcaption class="meta">
-      {year !== undefined ? 'Mois par mois' : 'Année par année'}<span class="sep">·</span>{kinds.map((k) => <span class="key" style={`--accent: var(--${k.kind})`}>{k.many}</span>)}
+      {year !== undefined ? 'Mois par mois' : 'Année par année'}<span class="sep">·</span>{legend.map((k) => <span class="key" style={`--accent: var(--${k.kind})`}>{k.many}</span>)}
     </figcaption>
     <ol class="months" style={`--columns: ${columns.length}`}>
       {columns.map((m) => {

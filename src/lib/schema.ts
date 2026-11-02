@@ -1,13 +1,12 @@
 // Données structurées schema.org (JSON-LD) : décrivent les œuvres et les reviews aux moteurs de recherche,
 // qui peuvent alors afficher la note sous le lien.
 import type { CollectionEntry } from 'astro:content';
-import { href, excerpt, slugify, isoDate, seriesUrl, type DatePrecision, type Season } from './content';
+import { href, excerpt, slugify, isoDate, seriesUrl, kinds, type DatePrecision, type Season } from './content';
 import { site } from './site';
 
 type Work = CollectionEntry<'works'>;
 type Log = { id: string; body?: string; data: { date?: Date; datePrecision?: DatePrecision; started?: Date; startedPrecision?: DatePrecision; undated: boolean; rating?: number; summary?: string } };
 
-const schemaType = { film: 'Movie', livre: 'Book', serie: 'TVSeries' } as const;
 const day = (d: Date) => d.toISOString().slice(0, 10);
 /** URL absolue d'une page du site ou d'une image dans /public. */
 const absolute = (path: string, origin: URL) => new URL(path.startsWith('/') ? href(path) : path, origin).href;
@@ -25,7 +24,7 @@ const credits = (w: Work['data'], origin: URL) => {
     role === 'dessin' || role === 'illustration' ? 'illustrator'
     : role === 'couleurs' ? 'contributor'
     : role === 'scénario' ? 'author'
-    : { film: 'director', livre: 'author', serie: 'creator' }[w.type];
+    : kinds[w.type].schemaOrg.creator;
   const groups = Object.groupBy(w.credits, (c) => property(c.role));
   return Object.fromEntries(Object.entries(groups).map(([key, list]) => [key, persons([...new Set(list!.map((c) => c.name))], origin)]));
 };
@@ -35,7 +34,7 @@ export function workSchema(work: Work, origin: URL) {
   const w = work.data;
   const image = w.poster;
   return {
-    '@type': schemaType[w.type],
+    '@type': kinds[w.type].schemaOrg.type,
     name: w.title,
     ...(w.originalTitle ? { alternateName: w.originalTitle } : {}),
     url: absolute(`/oeuvres/${work.id}/`, origin),

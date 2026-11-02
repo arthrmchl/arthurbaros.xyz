@@ -1,28 +1,24 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { kinds, type Kind } from './kinds';
 
 export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 export const href = (path: string) => `${base}${path}`;
 
-export const typeLabel = { film: 'Film', livre: 'Livre', serie: 'Série' } as const;
-export const typeRoute = { film: 'films', livre: 'livres', serie: 'series' } as const;
-export const verb = { film: 'Vu', livre: 'Lu', serie: 'Vu' } as const;
-/** Fiches sans entrée de journal : œuvres qu'on souhaite découvrir. */
-export const todoLabel = { film: 'À voir', livre: 'À lire', serie: 'À voir' } as const;
-/** Revisionnage / relecture, selon le type d'œuvre. */
-export const repeatLabel = { film: 'Revisionnage', livre: 'Relecture', serie: 'Revisionnage' } as const;
+// Vocabulaire propre à chaque type d'œuvre (libellés, routes, « À voir »…) : voir src/lib/kinds.ts.
+export { kinds, kindIds, type Kind } from './kinds';
+
 /** Format d'un livre : bande dessinée, manga ou comics. */
 export const formatLabel = { bd: 'Bande dessinée', manga: 'Manga', comics: 'Comics' } as const;
 export type Format = keyof typeof formatLabel;
 /** « Film », « Livre », « Série », ou le format d'un livre en court (« BD », « Manga », « Comics ») : étiquette du journal. */
-export const kindLabel = (w: { type: keyof typeof typeLabel; format?: Format }) =>
-  w.format ? { bd: 'BD', manga: 'Manga', comics: 'Comics' }[w.format] : typeLabel[w.type];
+export const kindLabel = (w: { type: Kind; format?: Format }) =>
+  w.format ? { bd: 'BD', manga: 'Manga', comics: 'Comics' }[w.format] : kinds[w.type].label;
 /** Article, singulier et pluriel : « un film », « une BD », « 2 mangas ». */
-export const kindNoun = (w: { type: keyof typeof typeLabel; format?: Format }) =>
-  ({ film: ['un', 'film', 'films'], serie: ['une', 'série', 'séries'], livre: ['un', 'livre', 'livres'],
-    bd: ['une', 'BD', 'BD'], manga: ['un', 'manga', 'mangas'], comics: ['un', 'comics', 'comics'] } as const)[w.format ?? w.type];
+export const kindNoun = (w: { type: Kind; format?: Format }) =>
+  w.format ? ({ bd: ['une', 'BD', 'BD'], manga: ['un', 'manga', 'mangas'], comics: ['un', 'comics', 'comics'] } as const)[w.format] : kinds[w.type].noun;
 /** Rôle d'une personne, affiché sur sa page : celui de `creators`, sinon celui que donne le type d'œuvre. */
-export const roleLabel = (role: string | undefined, type: keyof typeof typeLabel) =>
-  role ? capitalize(role) : { film: 'Réalisation', serie: 'Création', livre: 'Écriture' }[type];
+export const roleLabel = (role: string | undefined, type: Kind) =>
+  role ? capitalize(role) : kinds[type].defaultRole;
 /** « Blacksad, tome 3 », « Blacksad » (hors-série) ; rien hors d'une série. */
 export const volumeLabel = (w: { series?: string; volume?: number }) =>
   w.series && `${w.series}${w.volume !== undefined ? `, tome ${w.volume}` : ''}`;
@@ -90,12 +86,12 @@ export const fmtAired = (s: { firstAired?: Date; lastAired?: Date }) =>
   : s.firstAired.getTime() === s.lastAired.getTime() ? `Diffusée le ${fmtDate(s.firstAired)}`
   : `Diffusée ${fmtRange(s.firstAired, s.lastAired)}`;
 /** « Sorti le 8 octobre 2026 », « Publié en mars 1890 » ; rien si seule l'année est connue (elle s'affiche déjà ailleurs). */
-export const fmtReleased = (w: { type: string; released?: { year: number; month?: number; day?: number } }) => {
+export const fmtReleased = (w: { type: Kind; released?: { year: number; month?: number; day?: number } }) => {
   const r = w.released;
   if (!r?.month) return undefined;
   const d = new Date(Date.UTC(2000, r.month - 1, r.day ?? 1));
   d.setUTCFullYear(r.year);
-  const verb = w.type === 'livre' ? 'Publié' : 'Sorti';
+  const verb = kinds[w.type].released;
   return r.day ? `${verb} le ${fmtDate(d)}` : `${verb} en ${d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
 };
 /**
@@ -137,8 +133,6 @@ export const hasText = (log: { body?: string; data: { summary?: string } }) => B
 export const inProgress = (l: { date?: Date; undated: boolean }) => !l.date && !l.undated;
 /** « Date de visionnage inconnue » : une série vue à une date oubliée. */
 export const undatedLabel = 'Date de visionnage inconnue';
-/** « Affiche » ou « Couverture », selon le type d'œuvre (textes alternatifs). */
-export const imageLabel = (type: string) => (type === 'livre' ? 'Couverture' : 'Affiche');
 /** « Abandonné », « Abandonnée » (une saison). */
 export const abandonedLabel = (season?: unknown) => (season ? 'Abandonnée' : 'Abandonné');
 
@@ -190,22 +184,24 @@ export async function getJournal() {
   const byId = new Map(works.map((w) => [w.id, w]));
   const journal = logs.map((log) => {
     const work = byId.get(log.data.work.id)!;
-    const type = work.data.type;
+    const kind = kinds[work.data.type];
     const fail = (msg: string) => { throw new Error(`logs/${log.id} : ${msg}`); };
     // Seule une lecture ou une saison peut être en cours : un visionnage a toujours une date (la note reste optionnelle).
     // Seule une série peut être vue à une date oubliée (ni `date`, ni `watched`).
-    if (type === 'film' && !log.data.date) fail('un visionnage doit avoir une `date`.');
-    if (type === 'livre' && log.data.undated) fail('une lecture doit avoir une `date` (fin) ou un `started` (début).');
-    if (type === 'serie' && log.data.season === undefined && log.data.abandoned) {
+    if (!kind.inProgress && !log.data.date) fail('un visionnage doit avoir une `date`.');
+    if (!kind.seasons && log.data.undated) fail('une entrée doit avoir une `date` (fin) ou un `started` (début).');
+    if (kind.seasons && log.data.season === undefined && log.data.abandoned) {
       fail('un avis sur une série entière ne peut pas être `abandoned` : précise la `season` arrêtée.');
     }
-    if (type !== 'serie' && log.data.season !== undefined) fail('seule une série a des saisons (`season`).');
-    if (type !== 'serie' || log.data.season === undefined) return { log, work, season: undefined };
+    if (!kind.seasons && log.data.season !== undefined) fail('seule une série a des saisons (`season`).');
+    if (!kind.seasons || log.data.season === undefined) return { log, work, season: undefined };
     const { data, season } = followSeason(log, work);
     return { log: { ...log, data }, work, season };
   });
-  // Les séries vues à une date oubliée en dernier.
-  journal.sort((a, b) => (logDate(b.log.data)?.getTime() ?? -Infinity) - (logDate(a.log.data)?.getTime() ?? -Infinity) || 0);
+  // Les séries vues à une date oubliée en dernier. À date égale, l'ordre inverse des noms de fichier départage les entrées :
+  // sans lui, l'ordre suivrait celui du chargement des fichiers et changerait d'un build à l'autre.
+  journal.sort((a, b) => (logDate(b.log.data)?.getTime() ?? -Infinity) - (logDate(a.log.data)?.getTime() ?? -Infinity)
+    || b.log.id.localeCompare(a.log.id));
   warnMissingRepeats(journal);
   return journal;
 }
@@ -222,7 +218,7 @@ const warned = new Set<string>();
 function warnMissingRepeats(journal: { log: { id: string; data: { repeat: boolean } }; work: CollectionEntry<'works'>; season?: Season }[]) {
   const seen = new Set<string>();
   for (const { log, work, season } of journal.toReversed()) {
-    if (work.data.type === 'serie' && !season) continue;
+    if (kinds[work.data.type].seasons && !season) continue;
     const key = `${work.id}/${season?.number ?? ''}`;
     if (seen.has(key) && !log.data.repeat && !warned.has(log.id)) {
       warned.add(log.id);
@@ -254,14 +250,14 @@ export const workItems = (works: CollectionEntry<'works'>[], journal: RatedJourn
   const seen = new Set(latest.map(({ work }) => work.id));
   return [
     ...latest.map(({ work }) => ({ work: byId.get(work.id)!, rating: last(work.id)?.rating, liked: last(work.id)?.liked })),
-    ...works.filter((w) => !seen.has(w.id)).sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr')).map((work) => ({ work, rating: undefined })),
+    ...works.filter((w) => !seen.has(w.id)).sort((a, b) => a.data.title.localeCompare(b.data.title, 'fr') || a.id.localeCompare(b.id)).map((work) => ({ work, rating: undefined })),
   ];
 };
 /** « Films », « Livres », « Séries » ; « Mixte » pour une liste sans `type`. */
-export const listTypeLabel = { film: 'Films', livre: 'Livres', serie: 'Séries', mixte: 'Mixte' } as const;
+export const listTypeLabel = (type: Kind | 'mixte') => (type === 'mixte' ? 'Mixte' : kinds[type].plural);
 /** « 12 films », « 1 livre », « 5 œuvres » (liste mixte). */
-export const fmtListCount = (n: number, type?: keyof typeof typeLabel) => {
-  const [one, many] = type ? { film: ['film', 'films'], livre: ['livre', 'livres'], serie: ['série', 'séries'] }[type] : ['œuvre', 'œuvres'];
+export const fmtListCount = (n: number, type?: Kind) => {
+  const [, one, many] = type ? kinds[type].noun : ['une', 'œuvre', 'œuvres'];
   return `${n} ${n > 1 ? many : one}`;
 };
 
@@ -281,8 +277,8 @@ export async function getLists(journal: JournalEntry[]) {
       const items = l.items.map(({ work: ref, season: number }, i) => {
         const work = byId.get(ref.id) ?? fail(`l'œuvre \`${ref.id}\` n'a pas de fiche dans works/ (vérifie son nom de fichier).`);
         const w = work.data;
-        if (l.type && w.type !== l.type) fail(`\`${work.id}\` est ${{ film: 'un film', livre: 'un livre', serie: 'une série' }[w.type]}, dans une liste de ${listTypeLabel[l.type].toLowerCase()} (\`type: ${l.type}\`).`);
-        if (number !== undefined && w.type !== 'serie') fail(`\`${work.id}\` n'est pas une série : pas de \`season\`.`);
+        if (l.type && w.type !== l.type) fail(`\`${work.id}\` est ${kinds[w.type].noun.slice(0, 2).join(' ')}, dans une liste de ${listTypeLabel(l.type).toLowerCase()} (\`type: ${l.type}\`).`);
+        if (number !== undefined && !kinds[w.type].seasons) fail(`\`${work.id}\` n'est pas une série : pas de \`season\`.`);
         const season = number === undefined ? undefined
           : w.seasons.find((s) => s.number === number) ?? fail(`la saison ${number} n'existe pas dans la fiche \`${work.id}\`.`);
         const key = `${work.id}/${number ?? ''}`;
@@ -294,7 +290,7 @@ export async function getLists(journal: JournalEntry[]) {
       return { list, items };
     })
     .sort((a, b) => (b.list.data.updated ?? b.list.data.created).getTime() - (a.list.data.updated ?? a.list.data.created).getTime()
-      || a.list.data.title.localeCompare(b.list.data.title, 'fr'));
+      || a.list.data.title.localeCompare(b.list.data.title, 'fr') || a.list.id.localeCompare(b.list.id));
 }
 export type ListEntry = Awaited<ReturnType<typeof getLists>>[number];
 
@@ -307,7 +303,7 @@ export const byRelease = (a: CollectionEntry<'works'>, b: CollectionEntry<'works
     const r = w.released ?? (w.firstAired && { year: w.firstAired.getUTCFullYear(), month: w.firstAired.getUTCMonth() + 1, day: w.firstAired.getUTCDate() });
     return r ? r.year * 10000 + (r.month ?? 0) * 100 + (r.day ?? 0) : -Infinity;
   };
-  return key(b) - key(a) || a.data.title.localeCompare(b.data.title, 'fr');
+  return key(b) - key(a) || a.data.title.localeCompare(b.data.title, 'fr') || a.id.localeCompare(b.id);
 };
 /**
  * Séries de livres (champ `series` des fiches), par ordre alphabétique, avec leurs livres : tomes dans l'ordre, puis hors-séries par date de publication.
@@ -350,7 +346,7 @@ export const episodeTotals = (journal: JournalEntry[], year?: number) => {
       : log.data.watched
         .filter(({ date }) => inYear(date))
         .flatMap(({ episodes }) => episodes.map((n) => season.runtimes[n - 1] ?? 0))
-    : work.data.type === 'serie' && (log.data.date || log.data.undated) && inYear(log.data.date)
+    : kinds[work.data.type].seasons && (log.data.date || log.data.undated) && inYear(log.data.date)
       ? work.data.seasons.flatMap(all)
       : [])
     .reduce((t, runtime) => ({ episodes: t.episodes + 1, episodeMinutes: t.episodeMinutes + runtime }), { episodes: 0, episodeMinutes: 0 });

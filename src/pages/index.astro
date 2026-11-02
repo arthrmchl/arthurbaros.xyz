@@ -6,21 +6,19 @@ import RepeatIcon from '../components/RepeatIcon.astro';
 import ReviewIcon from '../components/ReviewIcon.astro';
 import Stars from '../components/Stars.astro';
 import { site } from '../lib/site';
-import { getJournal, journalYears, latestByWork, href, posterImage, fmtShortDate, fmtSince, fmtYears, inProgress, repeatLabel, seasonLabel } from '../lib/content';
+import { getJournal, journalYears, latestByWork, href, posterImage, fmtShortDate, fmtSince, fmtYears, inProgress, kinds, kindIds, seasonLabel, type Kind } from '../lib/content';
 
 const journal = await getJournal();
 const years = journalYears(journal);
 
-// Lectures et saisons en cours : la plus récente entrée de chaque livre ou série, si elle n'a pas de date de fin.
-const reading = latestByWork(journal.filter(({ work }) => work.data.type !== 'film')).filter(({ log }) => inProgress(log.data));
-// Derniers passages terminés (et datés), une rangée par type. Les séries, plus rares, n'ont leur rangée qu'une fois la première vue.
-const recent = (kind: 'film' | 'livre' | 'serie') =>
+// Lectures et saisons en cours : la plus récente entrée de chaque œuvre qui peut être en cours, si elle n'a pas de date de fin.
+const reading = latestByWork(journal.filter(({ work }) => kinds[work.data.type].inProgress)).filter(({ log }) => inProgress(log.data));
+// Derniers passages terminés (et datés), une rangée par type. Un type n'a sa rangée qu'une fois sa première entrée terminée.
+const recent = (kind: Kind) =>
   journal.filter(({ log, work }) => work.data.type === kind && log.data.date).slice(0, 5);
-const shelves = ([
-  { kind: 'film', title: 'Derniers films vus', all: 'Tous les films', route: '/films/', entries: recent('film') },
-  { kind: 'livre', title: 'Derniers livres lus', all: 'Tous les livres', route: '/livres/', entries: recent('livre') },
-  { kind: 'serie', title: 'Dernières séries vues', all: 'Toutes les séries', route: '/series/', entries: recent('serie') },
-] as const).filter(({ kind, entries }) => kind !== 'serie' || entries.length);
+const shelves = kindIds
+  .map((kind) => ({ kind, title: kinds[kind].latest, all: kinds[kind].all, route: `/${kinds[kind].route}/`, entries: recent(kind) }))
+  .filter(({ entries }) => entries.length);
 ---
 <Base>
   <h1 class="visually-hidden">{site.name} · {site.tagline}</h1>
@@ -29,7 +27,7 @@ const shelves = ([
       {(season?.poster ?? work.data.poster) && <img {...posterImage((season?.poster ?? work.data.poster)!, '6.5rem')} alt="" />}
       <div>
         <p class="meta">
-          {season ? 'En train de regarder' : 'En train de lire'}
+          {kinds[work.data.type].doing}
           {log.data.started && <> {fmtSince(log.data.started, log.data.startedPrecision)}</>}
         </p>
         <p class="title">{work.data.title}</p>
@@ -47,20 +45,18 @@ const shelves = ([
         <h2>{title}</h2>
         <a class="meta" href={href(route)}>{all} →</a>
       </div>
-      {entries.length
-        ? <ul class="posters" style={`--accent: var(--${kind})`}>
-            {entries.map(({ log, work, season }) => (
-              <Poster work={work} link={`/journal/${log.id}/`} image={season?.poster}>
-                <span class="rated">
-                  {log.data.rating !== undefined && <Stars rating={log.data.rating} type={kind} />}
-                  {log.data.liked && <LikeIcon type={kind} />}
-                  {log.data.repeat && <RepeatIcon label={repeatLabel[kind]} />}
-                  {log.body?.trim() && <ReviewIcon />}
-                </span>{season && !season.only && <>S{season.number}<span class="sep">·</span></>}{fmtShortDate(log.data.date!, log.data.datePrecision)}
-              </Poster>
-            ))}
-          </ul>
-        : <p class="meta">Rien pour l'instant.</p>}
+      <ul class="posters" style={`--accent: var(--${kind})`}>
+        {entries.map(({ log, work, season }) => (
+          <Poster work={work} link={`/journal/${log.id}/`} image={season?.poster}>
+            <span class="rated">
+              {log.data.rating !== undefined && <Stars rating={log.data.rating} type={kind} />}
+              {log.data.liked && <LikeIcon type={kind} />}
+              {log.data.repeat && <RepeatIcon label={kinds[kind].repeat} />}
+              {log.body?.trim() && <ReviewIcon />}
+            </span>{season && !season.only && <>S{season.number}<span class="sep">·</span></>}{fmtShortDate(log.data.date!, log.data.datePrecision)}
+          </Poster>
+        ))}
+      </ul>
     </section>
   ))}
 

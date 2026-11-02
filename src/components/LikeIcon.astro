@@ -1,8 +1,9 @@
 ---
+import type { Kind } from '../lib/content';
 // Cœur : l'œuvre a été aimée lors de ce passage (à la Letterboxd), aux couleurs du type d'œuvre.
 // Sans `type`, il prend la couleur `--accent` de son conteneur ; avec `label=""`, il est décoratif (le texte voisin le dit).
 // Taille en `em` : il suit la taille de police des étoiles qu'il accompagne (à lui donner, s'il n'est pas à côté).
-interface Props { type?: 'film' | 'livre' | 'serie'; label?: string }
+interface Props { type?: Kind; label?: string }
 const { type, label = 'Aimé' } = Astro.props;
 ---
 <svg class="like-icon" viewBox="2 3 20 18.35" style={type && `--accent: var(--${type})`}

@@ -20,7 +20,7 @@ const image = items.find((i) => i.image)?.image;
   <p class="meta"><a href={href('/listes/')}>Listes</a></p>
   <h1 class="list-title">{l.title}</h1>
   <p class="meta">
-    <span class:list={['pill', l.type ? `is-${l.type}` : 'is-mixte']}>{listTypeLabel[l.type ?? 'mixte']}</span>
+    <span class:list={['pill', l.type ? `is-${l.type}` : 'is-mixte']}>{listTypeLabel(l.type ?? 'mixte')}</span>
     <span class="sep">·</span>{l.ranked ? `Classement, ${count}` : count}
     <span class="sep">·</span>{l.updated ? `Mise à jour le ${fmtDate(l.updated)}` : `Créée le ${fmtDate(l.created)}`}
   </p>
